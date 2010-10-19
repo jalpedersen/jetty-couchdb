@@ -6,6 +6,13 @@ public class UserContext {
     private String name;
     private String roles[];
 
+    public UserContext() {}
+    
+    public UserContext(String name, String[] roles) {
+        this.name = name;
+        this.roles = roles;
+    }
+
     public String getName() {
         return name;
     }

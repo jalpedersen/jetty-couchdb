@@ -23,13 +23,13 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
     private final int port;
     private final HttpClient httpClient;
     private final boolean secure;
-    
+
     private final String sessionTokenId = "AuthSession";
-    private final Pattern authSessionCookiePattern = Pattern.compile(".*"+sessionTokenId+"=");
-    
+    private final Pattern authSessionCookiePattern = Pattern.compile(".*" + sessionTokenId + "=");
+
     private final String sessionContext = "/_session";
-    private final ObjectMapper objectMapper = new ObjectMapper(new JsonFactory().enable(
-            JsonParser.Feature.ALLOW_COMMENTS).enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES));
+    private final ObjectMapper objectMapper = new ObjectMapper(new JsonFactory()
+            .enable(JsonParser.Feature.ALLOW_COMMENTS).enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES));
 
     public CouchDbAuthenticatorImpl(String hostname, int port, boolean secure) {
         this.hostname = hostname;
@@ -38,14 +38,14 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
         httpClient = new HttpClient();
         try {
             httpClient.setConnectorType(HttpClient.CONNECTOR_SELECT_CHANNEL);
-            httpClient.setThreadPool(new QueuedThreadPool(25)); 
-            httpClient.setTimeout(5000); 
+            httpClient.setThreadPool(new QueuedThreadPool(25));
+            httpClient.setTimeout(5000);
             httpClient.start();
         } catch (Exception e) {
             throw new IllegalStateException("While starting httpClient", e);
         }
     }
-    
+
     public CouchDbAuthenticatorImpl(String hostname) {
         this(hostname, 5984, false);
     }
@@ -55,11 +55,11 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
         final CouchDbAuthExchange exchange = getSessionAuthRequest();
         exchange.setMethod(HttpMethods.POST);
         try {
-            //The username key is "name" - NOT "username"
-            final String content = "name="+username+"&password="+password;
+            // The username key is "name" - NOT "username"
+            final String content = "name=" + username + "&password=" + password;
             final Buffer requestContent = new ByteArrayBuffer(content.getBytes("utf-8"));
             exchange.setRequestContent(requestContent);
-         
+
             httpClient.send(exchange);
 
             exchange.waitForDone();
@@ -85,33 +85,30 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
         }
         return null;
     }
-    
-    
-    
+
     private CouchDbSessionExchange getSessionRequest(String sessionId) {
         final CouchDbSessionExchange exchange = new CouchDbSessionExchange();
-        exchange.setRequestHeader("Cookie", sessionTokenId+"="+sessionId);
+        exchange.setRequestHeader("Cookie", sessionTokenId + "=" + sessionId);
         exchange.setRequestHeader("X-CouchDB-WWW-Authenticate", "Cookie");
         return setConnectionDetails(exchange);
     }
 
     private final <T extends HttpExchange> T setConnectionDetails(T exchange) {
-        exchange.setScheme(secure?HttpSchemes.HTTPS_BUFFER:HttpSchemes.HTTP_BUFFER);
+        exchange.setScheme(secure ? HttpSchemes.HTTPS_BUFFER : HttpSchemes.HTTP_BUFFER);
         exchange.setAddress(new Address(hostname, port));
         exchange.setURI(sessionContext);
         exchange.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF=8");
         return exchange;
     }
-    
+
     private CouchDbAuthExchange getSessionAuthRequest() {
         return setConnectionDetails(new CouchDbAuthExchange());
     }
-    
+
     private class CouchDbSessionExchange extends HttpExchange {
 
         private UserSession userSession;
-        
-        
+
         public UserSession getUserSession() {
             return userSession;
         }
@@ -120,12 +117,12 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
         protected void onResponseContent(Buffer content) throws IOException {
             userSession = objectMapper.readValue(content.toString(), UserSession.class);
         }
-        
+
     }
-    
+
     private class CouchDbAuthExchange extends HttpExchange {
         private String sessionId;
-    
+
         public String getSessionId() {
             return sessionId;
         }
@@ -134,7 +131,7 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
         protected void onResponseHeader(Buffer name, Buffer value) throws IOException {
             if ("Set-Cookie".equals(name.toString()) && value != null) {
                 final String cookie = value.toString();
-                final String tokens[] = authSessionCookiePattern.split(cookie,2);
+                final String tokens[] = authSessionCookiePattern.split(cookie, 2);
                 if (tokens.length > 1) {
                     final String cookiePart = tokens[1];
                     final int splitIndex = cookiePart.indexOf(";");
@@ -143,6 +140,6 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
                     }
                 }
             }
-        }        
+        }
     }
 }

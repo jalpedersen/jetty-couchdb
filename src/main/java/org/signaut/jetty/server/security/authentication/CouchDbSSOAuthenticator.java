@@ -82,7 +82,7 @@ public class CouchDbSSOAuthenticator extends LoginAuthenticator {
     private String getSessionId(HttpServletRequest request) {
         final String cookieString = request.getHeader(HttpHeaders.COOKIE);
         final String tokens[] = authSessionCookiePattern.split(cookieString, 2);
-        System.out.println("c -> " + cookieString);
+
         if (tokens.length > 1) {
             final String cookiePart = tokens[1];
             final int splitIndex = cookiePart.indexOf(";");

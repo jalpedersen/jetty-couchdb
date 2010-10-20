@@ -30,11 +30,16 @@
       <version>${jetty.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.ektorp</groupId>
-      <artifactId>org.ektorp</artifactId>
-      <version>1.0.1</version>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-deploy</artifactId>
+      <version>${jetty.version}</version>
     </dependency>
-	<!-- Test dependencies -->
+    <dependency>
+      <groupId>org.codehaus.jackson</groupId>
+      <artifactId>jackson-jaxrs</artifactId>
+      <version>1.6.1</version>
+    </dependency>	
+    <!-- Test dependencies -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

@@ -1,4 +1,4 @@
-package org.signaut.jetty.server.security;
+package org.signaut.jetty.security;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -8,6 +8,8 @@ import javax.security.auth.Subject;
 
 import org.eclipse.jetty.server.UserIdentity;
 import org.junit.Test;
+import org.signaut.jetty.server.security.SerializableIdentityService;
+import org.signaut.jetty.server.security.SerializablePrincipal;
 
 public class TestIdentityService {
 

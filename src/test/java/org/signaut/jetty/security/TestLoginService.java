@@ -1,4 +1,4 @@
-package org.signaut.jetty.server.security;
+package org.signaut.jetty.security;
 
 import org.eclipse.jetty.server.UserIdentity;
 import org.junit.Assert;
@@ -6,6 +6,8 @@ import org.junit.Test;
 import org.signaut.common.hazelcast.HazelcastFactory;
 import org.signaut.couchdb.CouchDbAuthenticator;
 import org.signaut.couchdb.impl.CouchDbAuthenticatorImpl;
+import org.signaut.jetty.server.security.CouchDbLoginService;
+import org.signaut.jetty.server.security.SerializableIdentityService;
 
 import com.hazelcast.core.HazelcastInstance;
 

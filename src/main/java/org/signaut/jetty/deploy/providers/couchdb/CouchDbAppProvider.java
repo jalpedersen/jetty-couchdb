@@ -1,5 +1,6 @@
 package org.signaut.jetty.deploy.providers.couchdb;
 
+import java.io.File;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.eclipse.jetty.deploy.App;
@@ -32,24 +33,24 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     private final CouchDeployerProperties couchDbProperties;
     private final Authenticator.Factory authenticatorFactory;
     private final SessionManagerProvider sessionManagerProvider;
+    private final File tempDirectory;
     private final CouchDbClient couchDbClient;
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final AtomicLong sequence = new AtomicLong();
-    
+
     private String serverClasses[] = { "com.google.inject." };
     private String systemClasses[] = { "org.slf4j." };
-    
-    
-    
+
     public CouchDbAppProvider(CouchDeployerProperties couchDbProperties, Factory authenticatorFactory,
-                              SessionManagerProvider sessionManagerProvider, DeploymentManager deploymentManager) {
+                              File tempDirectory, SessionManagerProvider sessionManagerProvider,
+                              DeploymentManager deploymentManager) {
         this.couchDbProperties = couchDbProperties;
         this.authenticatorFactory = authenticatorFactory;
+        this.tempDirectory = tempDirectory;
         this.sessionManagerProvider = sessionManagerProvider;
         this.deploymentManager = deploymentManager;
-        couchDbClient = new CouchDbClient(couchDbProperties.getDatabaseUrl(), 
-                                          couchDbProperties.getUsername(), 
-                                          couchDbProperties.getPassword());
+        couchDbClient = new CouchDbClient(couchDbProperties.getDatabaseUrl(), couchDbProperties.getUsername(),
+                couchDbProperties.getPassword());
 
     }
 
@@ -57,17 +58,15 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     protected void doStart() throws Exception {
         final CouchChangesAppCallback appCallback = new CouchChangesAppCallback(deploymentManager, this);
         while (isRunning()) {
-            couchDbClient.dispatchChanges(couchDbProperties.getDesignDocument(), 
-                                          couchDbProperties.getFilter(),
-                                          sequence.get(),
-                                          appCallback);
+            couchDbClient.dispatchChanges(couchDbProperties.getDesignDocument(), couchDbProperties.getFilter(),
+                                          sequence.get(), appCallback);
         }
     }
 
     /**
-     * Set the latest couchdb sequence. Used in the event the connection between this and 
-     * couchdb is broken. If we did not have the latest sequence, all apps would be redeployed,
-     * and we don't want that.
+     * Set the latest couchdb sequence. Used in the event the connection between
+     * this and couchdb is broken. If we did not have the latest sequence, all
+     * apps would be redeployed, and we don't want that.
      * 
      * @param val
      * @return
@@ -75,7 +74,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     public long setSequence(long val) {
         return sequence.getAndSet(val);
     }
-    
+
     @Override
     public void setDeploymentManager(DeploymentManager deploymentManager) {
         if (isRunning()) {
@@ -86,7 +85,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
 
     @Override
     public ContextHandler createContextHandler(App app) throws Exception {
-        final CouchDbDocumentCallback callback = new CouchDbDocumentCallback(couchDbClient);
+        final CouchDbDocumentCallback callback = new CouchDbDocumentCallback(couchDbClient, tempDirectory);
         couchDbClient.dispatchGetDocument(app.getOriginId(), callback).waitForDone();
         return createContext(callback.getWebApp());
     }
@@ -107,7 +106,6 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         return context;
     }
 
-
     public void setServerClasses(String[] serverClasses) {
         this.serverClasses = serverClasses;
     }
@@ -115,7 +113,6 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     public void setSystemClasses(String[] systemClasses) {
         this.systemClasses = systemClasses;
     }
-
 
     private final String[] concat(String[] l, String[] r) {
         if (l == null || l.length == 0) {

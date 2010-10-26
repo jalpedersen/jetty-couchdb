@@ -53,9 +53,9 @@ class CouchDbDocumentCallback implements Callback {
         }
     }
 
-    public CouchDbDocumentCallback(CouchDbClient couchDbClient) {
+    public CouchDbDocumentCallback(CouchDbClient couchDbClient, File tempDirectory) {
         this.couchDbClient = couchDbClient;
-        this.tempDirectory = new File("/tmp");
+        this.tempDirectory = tempDirectory;
     }
 
     public WebAppDocument getWebApp() {

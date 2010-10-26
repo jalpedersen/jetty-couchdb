@@ -1,15 +1,7 @@
 package org.signaut.jetty.deploy.providers.couchdb;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.annotate.JsonAnyGetter;
-import org.codehaus.jackson.annotate.JsonAnySetter;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.eclipse.jetty.deploy.App;
 import org.eclipse.jetty.deploy.AppProvider;
 import org.eclipse.jetty.deploy.DeploymentManager;
@@ -42,8 +34,6 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     private final SessionManagerProvider sessionManagerProvider;
     private final CouchDbClient couchDbClient;
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final ObjectMapper objectMapper = new ObjectMapper(new JsonFactory()
-            .enable(JsonParser.Feature.ALLOW_COMMENTS).enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES));
     private final AtomicLong sequence = new AtomicLong();
     
     private String serverClasses[] = { "com.google.inject." };

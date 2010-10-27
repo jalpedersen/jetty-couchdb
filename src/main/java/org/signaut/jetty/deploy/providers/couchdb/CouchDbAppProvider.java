@@ -30,7 +30,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     }
 
     private DeploymentManager deploymentManager;
-    private final CouchDeployerProperties couchDbProperties;
+    private final CouchDeployerProperties couchDeployerProperties;
     private final Authenticator.Factory authenticatorFactory;
     private final SessionManagerProvider sessionManagerProvider;
     private final File tempDirectory;
@@ -41,21 +41,21 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     private String serverClasses[] = { "com.google.inject." };
     private String systemClasses[] = { "org.slf4j." };
 
-    public CouchDbAppProvider(CouchDeployerProperties couchDbProperties, Factory authenticatorFactory,
+    public CouchDbAppProvider(CouchDeployerProperties couchDeployerProperties, Factory authenticatorFactory,
                               File tempDirectory, SessionManagerProvider sessionManagerProvider) {
-        this.couchDbProperties = couchDbProperties;
+        this.couchDeployerProperties = couchDeployerProperties;
         this.authenticatorFactory = authenticatorFactory;
         this.tempDirectory = tempDirectory;
         this.sessionManagerProvider = sessionManagerProvider;
-        couchDbClient = new CouchDbClient(couchDbProperties.getDatabaseUrl(), couchDbProperties.getUsername(),
-                couchDbProperties.getPassword());
+        couchDbClient = new CouchDbClient(couchDeployerProperties.getDatabaseUrl(), couchDeployerProperties.getUsername(),
+                couchDeployerProperties.getPassword());
     }
 
     @Override
     protected void doStart() throws Exception {
         final CouchChangesAppCallback appCallback = new CouchChangesAppCallback(deploymentManager, this);
         while (isRunning()) {
-            couchDbClient.dispatchChanges(couchDbProperties.getDesignDocument(), couchDbProperties.getFilter(),
+            couchDbClient.dispatchChanges(couchDeployerProperties.getDesignDocument(), couchDeployerProperties.getFilter(),
                                           sequence.get(), appCallback);
         }
     }

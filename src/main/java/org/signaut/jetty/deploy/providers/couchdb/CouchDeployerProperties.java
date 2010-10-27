@@ -54,8 +54,9 @@ public class CouchDeployerProperties {
         return this;
     }
 
-    public void setDesignDocument(String designDocument) {
+    public CouchDeployerProperties setDesignDocument(String designDocument) {
         this.designDocument = designDocument;
+        return this;
     }
 
     public CouchDeployerProperties setFilter(String filter) {

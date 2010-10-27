@@ -56,7 +56,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         final CouchChangesAppCallback appCallback = new CouchChangesAppCallback(deploymentManager, this);
         while (isRunning()) {
             couchDbClient.dispatchChanges(couchDeployerProperties.getDesignDocument(), couchDeployerProperties.getFilter(),
-                                          sequence.get(), appCallback);
+                                          sequence.get(), appCallback).waitForDone();
         }
     }
 

@@ -6,11 +6,9 @@ import java.util.regex.Pattern;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.eclipse.jetty.client.Address;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpExchange;
 import org.eclipse.jetty.http.HttpMethods;
-import org.eclipse.jetty.http.HttpSchemes;
 import org.eclipse.jetty.io.Buffer;
 import org.eclipse.jetty.io.ByteArrayBuffer;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
@@ -19,11 +17,9 @@ import org.signaut.couchdb.UserContext;
 
 public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
 
-    private final String hostname;
-    private final int port;
+    private final String host;
     private final HttpClient httpClient;
-    private final boolean secure;
-
+    
     private final String sessionTokenId = "AuthSession";
     private final Pattern authSessionCookiePattern = Pattern.compile(".*" + sessionTokenId + "=");
 
@@ -31,10 +27,8 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
     private final ObjectMapper objectMapper = new ObjectMapper(new JsonFactory()
             .enable(JsonParser.Feature.ALLOW_COMMENTS).enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES));
 
-    public CouchDbAuthenticatorImpl(String hostname, int port, boolean secure) {
-        this.hostname = hostname;
-        this.port = port;
-        this.secure = secure;
+    public CouchDbAuthenticatorImpl(String host) {
+        this.host = host;
         httpClient = new HttpClient();
         try {
             httpClient.setConnectorType(HttpClient.CONNECTOR_SELECT_CHANNEL);
@@ -44,10 +38,6 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
         } catch (Exception e) {
             throw new IllegalStateException("While starting httpClient", e);
         }
-    }
-
-    public CouchDbAuthenticatorImpl(String hostname) {
-        this(hostname, 5984, false);
     }
 
     @Override
@@ -94,9 +84,7 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
     }
 
     private final <T extends HttpExchange> T setConnectionDetails(T exchange) {
-        exchange.setScheme(secure ? HttpSchemes.HTTPS_BUFFER : HttpSchemes.HTTP_BUFFER);
-        exchange.setAddress(new Address(hostname, port));
-        exchange.setURI(sessionContext);
+        exchange.setURL(host+sessionContext);
         exchange.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF=8");
         return exchange;
     }

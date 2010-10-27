@@ -42,16 +42,13 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     private String systemClasses[] = { "org.slf4j." };
 
     public CouchDbAppProvider(CouchDeployerProperties couchDbProperties, Factory authenticatorFactory,
-                              File tempDirectory, SessionManagerProvider sessionManagerProvider,
-                              DeploymentManager deploymentManager) {
+                              File tempDirectory, SessionManagerProvider sessionManagerProvider) {
         this.couchDbProperties = couchDbProperties;
         this.authenticatorFactory = authenticatorFactory;
         this.tempDirectory = tempDirectory;
         this.sessionManagerProvider = sessionManagerProvider;
-        this.deploymentManager = deploymentManager;
         couchDbClient = new CouchDbClient(couchDbProperties.getDatabaseUrl(), couchDbProperties.getUsername(),
                 couchDbProperties.getPassword());
-
     }
 
     @Override

@@ -15,7 +15,7 @@ public class TestLoginService {
 
     @Test
     public void testLogin() {
-        final CouchDbAuthenticator authenticator = new CouchDbAuthenticatorImpl("http://localhost:5984");
+        final CouchDbAuthenticator authenticator = new CouchDbAuthenticatorImpl("http://localhost:5984/_session");
         final HazelcastInstance hz = new HazelcastFactory()
                 .loadHazelcastInstance("/test-login-cluster.xml", getClass());
         final CouchDbLoginService service = new CouchDbLoginService("test", authenticator, hz);

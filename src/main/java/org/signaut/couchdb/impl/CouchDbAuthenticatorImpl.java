@@ -17,18 +17,17 @@ import org.signaut.couchdb.UserContext;
 
 public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
 
-    private final String host;
+    private final String authenticationUrl;
     private final HttpClient httpClient;
     
     private final String sessionTokenId = "AuthSession";
     private final Pattern authSessionCookiePattern = Pattern.compile(".*" + sessionTokenId + "=");
 
-    private final String sessionContext = "/_session";
     private final ObjectMapper objectMapper = new ObjectMapper(new JsonFactory()
             .enable(JsonParser.Feature.ALLOW_COMMENTS).enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES));
 
-    public CouchDbAuthenticatorImpl(String host) {
-        this.host = host;
+    public CouchDbAuthenticatorImpl(String authenticationUrl) {
+        this.authenticationUrl = authenticationUrl;
         httpClient = new HttpClient();
         try {
             httpClient.setConnectorType(HttpClient.CONNECTOR_SELECT_CHANNEL);
@@ -84,7 +83,7 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
     }
 
     private final <T extends HttpExchange> T setConnectionDetails(T exchange) {
-        exchange.setURL(host+sessionContext);
+        exchange.setURL(authenticationUrl);
         exchange.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF=8");
         return exchange;
     }

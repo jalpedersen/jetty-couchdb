@@ -8,7 +8,7 @@ import org.codehaus.jackson.annotate.JsonAnySetter;
 import org.codehaus.jackson.annotate.JsonProperty;
 
 class Document {
-    @JsonProperty("_attachment")
+    @JsonProperty("_attachments")
     private Map<String, Attachment> attachments;
     @JsonProperty("_id")
     private String id;

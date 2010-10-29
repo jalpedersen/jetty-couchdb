@@ -1,8 +1,13 @@
 package org.signaut.jetty.deploy.providers.couchdb;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.codehaus.jackson.map.ObjectMapper;
 import org.eclipse.jetty.deploy.App;
 import org.eclipse.jetty.deploy.AppProvider;
 import org.eclipse.jetty.deploy.DeploymentManager;
@@ -14,7 +19,7 @@ import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.eclipse.jetty.webapp.WebAppContext;
-import org.signaut.jetty.deploy.providers.couchdb.CouchDbDocumentCallback.WebAppDocument;
+import org.signaut.common.http.SimpleHttpClient.HttpResponseHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,37 +38,77 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     private final CouchDeployerProperties couchDeployerProperties;
     private final Authenticator.Factory authenticatorFactory;
     private final SessionManagerProvider sessionManagerProvider;
-    private final File tempDirectory;
     private final CouchDbClient couchDbClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final Logger log = LoggerFactory.getLogger(getClass());
+    /*
+     * Latest couchdb sequence. Used in the event the connection between
+     * this and couchdb is broken. If we did not have the latest sequence, all
+     * apps would be redeployed, and we don't want that.
+     */
     private final AtomicLong sequence = new AtomicLong();
-
+    
+    private Thread changeListenerThread;
     private String serverClasses[] = { "com.google.inject." };
     private String systemClasses[] = { "org.slf4j." };
 
     public CouchDbAppProvider(CouchDeployerProperties couchDeployerProperties, Factory authenticatorFactory,
-                              File tempDirectory, SessionManagerProvider sessionManagerProvider) {
+                              SessionManagerProvider sessionManagerProvider) {
         this.couchDeployerProperties = couchDeployerProperties;
         this.authenticatorFactory = authenticatorFactory;
-        this.tempDirectory = tempDirectory;
         this.sessionManagerProvider = sessionManagerProvider;
-        couchDbClient = new CouchDbClient(couchDeployerProperties.getDatabaseUrl(), couchDeployerProperties.getUsername(),
+        couchDbClient = new CouchDbClientImpl(couchDeployerProperties.getDatabaseUrl(), couchDeployerProperties.getUsername(),
                 couchDeployerProperties.getPassword());
+        
     }
 
     @Override
-    protected void doStart() throws Exception {
-        final CouchChangesAppCallback appCallback = new CouchChangesAppCallback(deploymentManager, this);
-        while (isRunning()) {
-            couchDbClient.dispatchChanges(couchDeployerProperties.getDesignDocument(), couchDeployerProperties.getFilter(),
-                                          sequence.get(), appCallback).waitForDone();
+    protected void doStart() {
+        if (changeListenerThread != null) {
+            throw new IllegalArgumentException("Already running");
+        }
+        changeListenerThread = new ChangeListener();
+        changeListenerThread.start();
+    }
+    
+    private final class ChangeListener extends Thread {
+        final HttpResponseHandler<Void> changeSetHandler = new HttpResponseHandler<Void>(){
+
+            @Override
+            public Void handleInput(int responseCode, HttpURLConnection connection) {
+                try {
+                    final BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                    String change;
+                    while ((change = reader.readLine())!=null) {
+                        final ChangeSet changeSet = decode(change, ChangeSet.class);
+                        if (changeSet == null) {
+                            throw new IllegalStateException(String.format("changeSet was null (%s)", change));
+                        }
+                        deploymentManager.addApp(new App(deploymentManager, CouchDbAppProvider.this, changeSet.getId()));
+                        sequence.set(changeSet.getSequence());
+                    }
+                } catch (IOException e) {
+                    //Ignore
+                }
+                return null;
+            }};
+        
+        @Override
+        public void run() {
+            while (isRunning()) {
+                try {
+                    couchDbClient.get("/_changes?feed=continuous" +
+                                      "&filter="+couchDeployerProperties.getFilter()+
+                                      "&since="+sequence.get(), 
+                                      changeSetHandler);
+                } catch (Throwable t) {
+                    log.error("While listening for changes", t);
+                }
+            }
         }
     }
-
+    
     /**
-     * Set the latest couchdb sequence. Used in the event the connection between
-     * this and couchdb is broken. If we did not have the latest sequence, all
-     * apps would be redeployed, and we don't want that.
      * 
      * @param val
      * @return
@@ -82,9 +127,17 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
 
     @Override
     public ContextHandler createContextHandler(App app) throws Exception {
-        final CouchDbDocumentCallback callback = new CouchDbDocumentCallback(couchDbClient, tempDirectory);
-        couchDbClient.dispatchGetDocument(app.getOriginId(), callback).waitForDone();
-        return createContext(callback.getWebApp());
+        final WebAppDocument wepapp = couchDbClient.getDocument(app.getOriginId(), WebAppDocument.class);
+        //Search for a suitable war file
+        for (String s: wepapp.getAttachments().keySet()) {
+            if (s.endsWith(".war")) {
+                final File directory = new File("/tmp"+"/"+app.getOriginId());
+                wepapp.setWar(couchDbClient.downloadAttachment(app.getOriginId(), s, directory));
+                break;
+            }
+        }
+        log.debug(wepapp.toString());
+        return createContext(wepapp);
     }
 
     private ContextHandler createContext(WebAppDocument desc) {
@@ -93,7 +146,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         context.setServerClasses(concat(context.getServerClasses(), serverClasses));
         context.setSystemClasses(concat(context.getSystemClasses(), systemClasses));
 
-        // context.setWar(home + desc.war);
+        context.setWar(desc.getWar());
         final ErrorHandler errorHandler = new JsonErrorHandler();
         errorHandler.setShowStacks(desc.isShowingFullStacktrace());
         context.setErrorHandler(errorHandler);
@@ -103,6 +156,15 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         return context;
     }
 
+    private <T> T decode(String str, Class<T> type) {
+        try {
+            return objectMapper.readValue(str, type);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(String.format("While parsing %s as %s", str, type), e);
+        }
+    }
+    
+    
     public void setServerClasses(String[] serverClasses) {
         this.serverClasses = serverClasses;
     }

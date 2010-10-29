@@ -2,7 +2,6 @@ package org.signaut.jetty.server.security.authentication;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.util.regex.Pattern;
 
 import javax.security.auth.Subject;
 import javax.servlet.ServletRequest;
@@ -23,8 +22,6 @@ import org.signaut.jetty.server.security.SerializablePrincipal;
 
 public class CouchDbSSOAuthenticator extends LoginAuthenticator {
 
-    private final String sessionTokenId = "AuthSession";
-    private final Pattern authSessionCookiePattern = Pattern.compile(".*" + sessionTokenId + "=");
     private final CouchDbAuthenticator couchDbAuthenticator;
 
     public CouchDbSSOAuthenticator(CouchDbAuthenticator couchDbAuthenticator) {
@@ -41,7 +38,7 @@ public class CouchDbSSOAuthenticator extends LoginAuthenticator {
             throws ServerAuthException {
         final HttpServletRequest httpRequest = (HttpServletRequest) request;
         final HttpServletResponse httpResponse = (HttpServletResponse) response;
-        final String sessionId = getSessionId(httpRequest);
+        final String sessionId = couchDbAuthenticator.decodeAuthToken(httpRequest.getHeader(HttpHeaders.COOKIE));
 
         try {
             if ( ! mandatory) {
@@ -79,22 +76,7 @@ public class CouchDbSSOAuthenticator extends LoginAuthenticator {
         return _identityService.newUserIdentity(subject, principal, roles);
     }
     
-    private String getSessionId(HttpServletRequest request) {
-        final String cookieString = request.getHeader(HttpHeaders.COOKIE);
-        final String tokens[] = authSessionCookiePattern.split(cookieString, 2);
-
-        if (tokens.length > 1) {
-            final String cookiePart = tokens[1];
-            final int splitIndex = cookiePart.indexOf(";");
-            if (splitIndex >= 0) {
-                return cookiePart.substring(0, splitIndex);
-            }else {
-                return cookiePart;
-            }
-        }
-        return null;
-    }
-
+    
     @Override
     public boolean secureResponse(ServletRequest request, ServletResponse response, boolean mandatory,
             User validatedUser) throws ServerAuthException {

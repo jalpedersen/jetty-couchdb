@@ -31,11 +31,13 @@ public class TestSSOAuthenticator {
         final AuthConfiguration configuration = m.mock(AuthConfiguration.class);
         final LoginService loginService = m.mock(LoginService.class);
         final String sessionId = "424242abc";
+        final String cookieString = "Something=blah;AuthSession="+sessionId+";SomethingElse=blahblah";
         m.checking(new Expectations() {{
             oneOf(configuration).getIdentityService(); will(returnValue(new SerializableIdentityService()));
             oneOf(configuration).getLoginService(); will(returnValue(loginService));
             oneOf(configuration).isSessionRenewedOnAuthentication(); will(returnValue(false));
-            oneOf(req).getHeader(HttpHeaders.COOKIE); will(returnValue("Something=blah;AuthSession="+sessionId+";SomethingElse=blahblah"));
+            oneOf(req).getHeader(HttpHeaders.COOKIE); will(returnValue(cookieString));
+            oneOf(couchDbAuthenticator).decodeAuthToken(cookieString); will(returnValue(sessionId));
             oneOf(couchDbAuthenticator).validate(sessionId); will(returnValue(new UserContext("jalp", null)));
             oneOf(res).sendError(HttpServletResponse.SC_FORBIDDEN);
             

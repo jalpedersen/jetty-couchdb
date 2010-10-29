@@ -90,9 +90,6 @@ public class CouchDbLoginService extends AbstractLifeCycle implements LoginServi
 
     @Override
     public void setIdentityService(IdentityService service) {
-        if (isStarted()) {
-            throw new IllegalStateException("Running");
-        }
         this.identityService = service;
     }
 }

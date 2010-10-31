@@ -82,7 +82,9 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
                     while ((change = reader.readLine())!=null) {
                         final ChangeSet changeSet = decode(change, ChangeSet.class);
                         if (changeSet == null || changeSet.getSequence() == null) {
-                            throw new IllegalStateException(String.format("bad change: %s", change));
+                            if (changeSet.getLastSequence() == null) {
+                                throw new IllegalStateException(String.format("bad change: %s", change));
+                            }
                         }
 
                         //undeploy if needed

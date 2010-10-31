@@ -5,16 +5,16 @@ import org.codehaus.jackson.annotate.JsonProperty;
 
 class ChangeSet {
     @JsonProperty("seq")
-    private long sequence;
+    private Long sequence;
     @JsonProperty("_id")
     private String id;
     private boolean deleted;
     
-    public long getSequence() {
+    public Long getSequence() {
         return sequence;
     }
 
-    public void setSequence(long sequence) {
+    public void setSequence(Long sequence) {
         this.sequence = sequence;
     }
 
@@ -32,6 +32,12 @@ class ChangeSet {
 
     public void setDeleted(boolean deleted) {
         this.deleted = deleted;
+    }
+    
+    
+    @Override
+    public String toString() {
+        return "ChangeSet [sequence=" + sequence + ", id=" + id + ", deleted=" + deleted + "]";
     }
 
     @JsonAnySetter

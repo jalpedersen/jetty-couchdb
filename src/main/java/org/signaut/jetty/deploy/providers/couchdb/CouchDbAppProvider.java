@@ -81,10 +81,19 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
                     String change;
                     while ((change = reader.readLine())!=null) {
                         final ChangeSet changeSet = decode(change, ChangeSet.class);
-                        if (changeSet == null) {
-                            throw new IllegalStateException(String.format("changeSet was null (%s)", change));
+                        if (changeSet == null || changeSet.getSequence() == null) {
+                            throw new IllegalStateException(String.format("bad change: %s", change));
                         }
-                        deploymentManager.addApp(new App(deploymentManager, CouchDbAppProvider.this, changeSet.getId()));
+
+                        //undeploy if needed
+                        final App oldApp = deploymentManager.getAppByOriginId(changeSet.getId());
+                        if (oldApp != null) {
+                            log.debug("Undeploying {} at {}", oldApp.getOriginId(), oldApp.getContextId());
+                            deploymentManager.removeApp(oldApp);
+                        }
+                        if ( ! changeSet.isDeleted()) {
+                            deploymentManager.addApp(new App(deploymentManager, CouchDbAppProvider.this, changeSet.getId()));
+                        }
                         sequence.set(changeSet.getSequence());
                     }
                 } catch (IOException e) {
@@ -97,6 +106,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         public void run() {
             while (isRunning()) {
                 try {
+                    log.info("CouchDB sequence: " + sequence.get());
                     couchDbClient.get("/_changes?feed=continuous" +
                                       "&filter="+couchDeployerProperties.getFilter()+
                                       "&since="+sequence.get(), 
@@ -108,15 +118,6 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         }
     }
     
-    /**
-     * 
-     * @param val
-     * @return
-     */
-    public long setSequence(long val) {
-        return sequence.getAndSet(val);
-    }
-
     @Override
     public void setDeploymentManager(DeploymentManager deploymentManager) {
         if (isRunning()) {

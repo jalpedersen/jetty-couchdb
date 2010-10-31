@@ -37,4 +37,10 @@ public class WebAppDocument extends Document {
     public void setShowingFullStacktrace(boolean showingFullStacktrace) {
         this.showingFullStacktrace = showingFullStacktrace;
     }
+
+    @Override
+    public String toString() {
+        return "WebAppDocument [name=" + name + ", contextPath=" + contextPath + ", war=" + war + "]";
+    }
+       
 }

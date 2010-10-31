@@ -1,6 +1,7 @@
 package org.signaut.jetty.deploy.providers.couchdb;
 
 import java.io.BufferedReader;
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -82,9 +83,10 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
                     while ((change = reader.readLine())!=null) {
                         final ChangeSet changeSet = decode(change, ChangeSet.class);
                         if (changeSet == null || changeSet.getSequence() == null) {
-                            if (changeSet.getLastSequence() == null) {
+                            if (changeSet != null && changeSet.getLastSequence() == null) {
                                 throw new IllegalStateException(String.format("bad change: %s", change));
                             }
+                            continue;
                         }
 
                         //undeploy if needed
@@ -162,6 +164,8 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     private <T> T decode(String str, Class<T> type) {
         try {
             return objectMapper.readValue(str, type);
+        } catch (EOFException e) {
+            return null;
         } catch (Exception e) {
             throw new IllegalArgumentException(String.format("While parsing %s as %s", str, type), e);
         }

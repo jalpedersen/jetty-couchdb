@@ -1,6 +1,7 @@
 package org.signaut.jetty.server.security.authentication;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.security.Principal;
 
 import javax.security.auth.Subject;
@@ -10,12 +11,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.http.HttpHeaders;
+import org.eclipse.jetty.http.security.B64Code;
 import org.eclipse.jetty.security.ServerAuthException;
 import org.eclipse.jetty.security.UserAuthentication;
 import org.eclipse.jetty.security.authentication.LoginAuthenticator;
 import org.eclipse.jetty.server.Authentication;
 import org.eclipse.jetty.server.Authentication.User;
 import org.eclipse.jetty.server.UserIdentity;
+import org.eclipse.jetty.util.StringUtil;
 import org.signaut.couchdb.CouchDbAuthenticator;
 import org.signaut.couchdb.UserContext;
 import org.signaut.jetty.server.security.SerializablePrincipal;
@@ -38,7 +41,13 @@ public class CouchDbSSOAuthenticator extends LoginAuthenticator {
             throws ServerAuthException {
         final HttpServletRequest httpRequest = (HttpServletRequest) request;
         final HttpServletResponse httpResponse = (HttpServletResponse) response;
-        final String sessionId = couchDbAuthenticator.decodeAuthToken(httpRequest.getHeader(HttpHeaders.COOKIE));
+        final String sessionId;
+        final String cookie = httpRequest.getHeader(HttpHeaders.COOKIE);
+        if (cookie != null) {
+            sessionId = couchDbAuthenticator.decodeAuthToken(cookie);
+        } else {
+            sessionId = basicAuth(httpRequest);
+        }
 
         try {
             if ( ! mandatory) {
@@ -75,12 +84,32 @@ public class CouchDbSSOAuthenticator extends LoginAuthenticator {
         subject.setReadOnly();
         return _identityService.newUserIdentity(subject, principal, roles);
     }
-    
-    
+
+    private String basicAuth(HttpServletRequest httpRequest) {
+        final String auth = httpRequest.getHeader(HttpHeaders.AUTHORIZATION);
+        if (auth != null) {
+            final String decodedAuth;
+            try {
+                decodedAuth = B64Code.decode(auth.substring(auth.indexOf(' ')+1),StringUtil.__ISO_8859_1);
+            } catch (UnsupportedEncodingException e) {
+                throw new IllegalArgumentException("Bad authorization: "+auth,e);
+            }
+            final String authTokens[] = decodedAuth.split(":", 2);
+            if (authTokens.length > 1) {
+
+            } else {
+                throw new IllegalArgumentException("bad authentication: " + auth);
+            }
+            return couchDbAuthenticator.authenticate(authTokens[0], authTokens[1]);
+        }
+        return null;
+    }
+
     @Override
     public boolean secureResponse(ServletRequest request, ServletResponse response, boolean mandatory,
             User validatedUser) throws ServerAuthException {
         return true;
     }
+
 
 }

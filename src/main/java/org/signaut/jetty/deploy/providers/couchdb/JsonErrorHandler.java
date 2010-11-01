@@ -17,13 +17,14 @@ class JsonErrorHandler extends ErrorHandler {
             boolean showStacks) throws IOException {
         // TODO Auto-generated method stub
         final Throwable exception = (Throwable) request.getAttribute("javax.servlet.error.exception");
+        final String user = request.getUserPrincipal()==null?null:request.getUserPrincipal().getName();
         if (exception == null) {
-            message = String.format("{\"status\": %d, \"uri\":\"%s\"," + "\"message\": %s}", code,
-                                    request.getRequestURI(), jsonStr(message));
+            message = String.format("{\"status\": %d, \"uri\":\"%s\", \"user\": %s, \"message\": %s}", code,
+                                    request.getRequestURI(), jsonStr(user), jsonStr(message));
         } else {
-            message = String.format("{\"status\": %d, \"uri\":\"%s\"," + "\"message\": %s, " + "\"exception\": { "
+            message = String.format("{\"status\": %d, \"uri\":\"%s\", \"user\": %s, \"message\": %s, \"exception\": { "
                                             + "\"exception\": \"%s\", \"message\": %s} }", code,
-                                    request.getRequestURI(), jsonStr(message),
+                                    request.getRequestURI(), jsonStr(user), jsonStr(message),
                                     exception.getClass().getCanonicalName(), jsonStr(exception.getMessage()));
         }
         writer.write(message);

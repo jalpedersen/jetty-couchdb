@@ -36,7 +36,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     }
 
     private DeploymentManager deploymentManager;
-    private final CouchDeployerProperties couchDeployerProperties;
+    private final CouchDbDeployerProperties couchDeployerProperties;
     private final Authenticator.Factory authenticatorFactory;
     private final SessionManagerProvider sessionManagerProvider;
     private final CouchDbClient couchDbClient;
@@ -53,7 +53,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     private String serverClasses[] = { "com.google.inject." };
     private String systemClasses[] = { "org.slf4j." };
 
-    public CouchDbAppProvider(CouchDeployerProperties couchDeployerProperties, Factory authenticatorFactory,
+    public CouchDbAppProvider(CouchDbDeployerProperties couchDeployerProperties, Factory authenticatorFactory,
                               SessionManagerProvider sessionManagerProvider) {
         this.couchDeployerProperties = couchDeployerProperties;
         this.authenticatorFactory = authenticatorFactory;
@@ -112,6 +112,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
                 try {
                     log.info("CouchDB sequence: " + sequence.get());
                     couchDbClient.get("/_changes?feed=continuous" +
+                                      "&heartbeat="+couchDeployerProperties.getHeartbeat()+
                                       "&filter="+couchDeployerProperties.getFilter()+
                                       "&since="+sequence.get(), 
                                       changeSetHandler);

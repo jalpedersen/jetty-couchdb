@@ -17,6 +17,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.signaut.couchdb.CouchDbAuthenticator;
 import org.signaut.couchdb.UserContext;
+import org.signaut.couchdb.impl.CouchDbAuthenticatorImpl;
 import org.signaut.jetty.server.security.SerializableIdentityService;
 import org.signaut.jetty.server.security.authentication.CouchDbSSOAuthenticator;
 
@@ -31,7 +32,7 @@ public class TestSSOAuthenticator {
         final AuthConfiguration configuration = m.mock(AuthConfiguration.class);
         final LoginService loginService = m.mock(LoginService.class);
         final String sessionId = "424242abc";
-        final String cookieString = "Something=blah;AuthSession="+sessionId+";SomethingElse=blahblah";
+        final String cookieString = "Something=blah; AuthSession="+sessionId+"; SomethingElse=blahblah";
         m.checking(new Expectations() {{
             oneOf(configuration).getIdentityService(); will(returnValue(new SerializableIdentityService()));
             oneOf(configuration).getLoginService(); will(returnValue(loginService));
@@ -46,6 +47,20 @@ public class TestSSOAuthenticator {
         ssoAuthenticator.setConfiguration(configuration);
         Authentication auth = ssoAuthenticator.validateRequest(req, res, true);
         Assert.assertTrue("Not a user authentication", auth instanceof UserAuthentication);
+    }
+
+    @Test
+    public void testCookie() {
+        final CouchDbAuthenticator realAuthenticator = new CouchDbAuthenticatorImpl("http://notused");
+        final String sessionId1 = "424242abc";
+        final String cookieString1 = "Something=blah; AuthSession="+sessionId1+"; SomethingElse=blahblah";
+        Assert.assertEquals(sessionId1, realAuthenticator.decodeAuthToken(cookieString1));
+        
+        final String sessionId2 = "a25vd25Vc2VyOjRDQ0NDMjM3Oi9mO6CQMYje4dQ4KVTPnEGqML7Z";
+        final String cookieString2 = "JSESSIONID=jalp-laptop188ry8banfewr1phy6ovvpkz3i.jalp-laptop; AuthSession=a25vd25Vc2VyOjRDQ0NDMjM3Oi9mO6CQMYje4dQ4KVTPnEGqML7Z";
+        Assert.assertEquals(sessionId2, realAuthenticator.decodeAuthToken(cookieString2));
+        
+
     }
     
 }

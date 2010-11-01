@@ -84,14 +84,15 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
     }
 
     @Override
-    public String decodeAuthToken(String cookieString) {
-        final String cookie = cookieString.toString();
+    public String decodeAuthToken(String cookie) {
         final String tokens[] = authSessionCookiePattern.split(cookie, 2);
         if (tokens.length > 1) {
             final String cookiePart = tokens[1];
             final int splitIndex = cookiePart.indexOf(";");
             if (splitIndex >= 0) {
                 return (cookiePart.substring(0, splitIndex));
+            } else {
+                return cookiePart;
             }
         }
         return null;

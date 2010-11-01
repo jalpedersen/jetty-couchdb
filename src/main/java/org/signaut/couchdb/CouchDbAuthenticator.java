@@ -7,6 +7,6 @@ public interface CouchDbAuthenticator {
 
     UserContext validate(String sessionId);
     
-    String decodeAuthToken(String cookieString);
+    String decodeAuthToken(String cookie);
     
 }

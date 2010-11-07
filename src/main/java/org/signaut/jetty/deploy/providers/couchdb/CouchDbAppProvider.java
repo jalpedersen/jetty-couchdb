@@ -160,17 +160,22 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
 
     @Override
     public ContextHandler createContextHandler(App app) throws Exception {
-        final WebAppDocument wepapp = couchDbClient.getDocument(app.getOriginId(), WebAppDocument.class);
+        final WebAppDocument webapp = couchDbClient.getDocument(app.getOriginId(), WebAppDocument.class);
         //Search for a suitable war file
-        for (String s: wepapp.getAttachments().keySet()) {
-            if (s.endsWith(".war")) {
-                final File directory = new File("/tmp"+"/"+app.getOriginId());
-                wepapp.setWar(couchDbClient.downloadAttachment(app.getOriginId(), s, directory));
-                break;
+        if (webapp.getAttachments() != null) {
+            for (String s: webapp.getAttachments().keySet()) {
+                if (s.endsWith(".war")) {
+                    final File directory = new File(couchDeployerProperties.getTemporaryDirectory()+"/"+app.getOriginId());
+                    webapp.setWar(couchDbClient.downloadAttachment(app.getOriginId(), s, directory));
+                    break;
+                }
             }
         }
-        log.debug(wepapp.toString());
-        return createContext(wepapp);
+        if (webapp.getWar() == null) {
+            deploymentManager.removeApp(app);
+            throw new IllegalArgumentException("No war file for " + webapp); 
+        }
+        return createContext(webapp);
     }
 
     private ContextHandler createContext(WebAppDocument desc) {

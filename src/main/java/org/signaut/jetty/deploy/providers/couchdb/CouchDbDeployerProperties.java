@@ -27,12 +27,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package org.signaut.jetty.deploy.providers.couchdb;
 
+
 public class CouchDbDeployerProperties {
     private String databaseUrl;
     private String username;
     private String password;
     private String filter;
     private int heartbeat = 10;
+    private String temporaryDirectory = System.getProperty("java.io.tmpdir");
 
     public CouchDbDeployerProperties() {
     }
@@ -90,5 +92,16 @@ public class CouchDbDeployerProperties {
         this.filter = filter;
         return this;
     }
+
+    public String getTemporaryDirectory() {
+        return temporaryDirectory;
+    }
+
+    public CouchDbDeployerProperties setTemporaryDirectory(String temporaryDirectory) {
+        this.temporaryDirectory = temporaryDirectory;
+        return this;
+    }
+    
+    
 
 }

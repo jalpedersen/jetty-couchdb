@@ -8,3 +8,5 @@ This jetty extension provides:
 * Jetty login module authenticating against CouchDB
 
 
+See github.com/jalpedersen/camelback for usage example
+

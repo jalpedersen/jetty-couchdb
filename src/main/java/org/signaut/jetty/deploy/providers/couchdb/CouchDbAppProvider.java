@@ -115,14 +115,16 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
                             }
                             continue;
                         }
-
-                        //undeploy if needed
-                        final App oldApp = deploymentManager.getAppByOriginId(changeSet.getId());
-                        if (oldApp != null) {
-                            log.debug("Undeploying {} at {}", oldApp.getOriginId(), oldApp.getContextId());
-                            deploymentManager.removeApp(oldApp);
-                        }
                         if ( ! changeSet.isDeleted()) {
+                            final WebAppDocument webapp = couchDbClient.getDocument(changeSet.getId(), WebAppDocument.class);
+                            if (webapp != null) {
+                                //undeploy existing app at this app's context path
+                                final App oldApp = deploymentManager.getAppByContextId(webapp.getContextPath());
+                                if (oldApp != null) {
+                                    log.debug("Undeploying {} at {}", oldApp.getOriginId(), oldApp.getContextId());
+                                    deploymentManager.removeApp(oldApp);
+                                }
+                            }
                             deploymentManager.addApp(new App(deploymentManager, CouchDbAppProvider.this, changeSet.getId()));
                         }
                         sequence.set(changeSet.getSequence());

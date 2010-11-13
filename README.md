@@ -31,8 +31,12 @@ Single-Sign-On
 `org.signaut.jetty.server.security.authentication.CouchDbSSOAuthenticator`
 
 Single-sign-on between CouchDB and Jetty based on the `AuthSession`
-cookie set by CouchDB's HTTP authentication. Also supports basic HTTP
-authentication, where the user is authenticated against CouchDB. 
+cookie set by CouchDB's HTTP authentication. In short this allows you
+to do a `request.getUserPrincipal()` in your servlet and get what you
+would expect.
+
+It also supports normal basic HTTP authentication, where the user is
+authenticated against CouchDB.
 
 A use case for this is to allow you to access a Java webapp from a
 CouchApp for instance.

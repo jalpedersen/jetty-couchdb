@@ -33,7 +33,9 @@ Single-Sign-On
 Single-sign-on between CouchDB and Jetty based on the `AuthSession`
 cookie set by CouchDB's HTTP authentication. In short this allows you
 to do a `request.getUserPrincipal()` in your servlet and get what you
-would expect.
+would expect. This also means that you can specify security
+constraints in your `web.xml` using CouchDB roles.
+
 
 It also supports normal basic HTTP authentication, where the user is
 authenticated against CouchDB.

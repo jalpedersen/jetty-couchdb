@@ -7,7 +7,7 @@ This jetty extension provides:
 * Single-sign-on authenticator between jetty and CouchDB
 * Jetty login module authenticating against CouchDB
 
-See github.com/jalpedersen/camelback for simple example using both
+See [camelback](github.com/jalpedersen/camelback) for simple example using both
 jetty-couchdb and
 [jetty-cluster](http://github.com/jalpedersen/jetty-cluster).
 

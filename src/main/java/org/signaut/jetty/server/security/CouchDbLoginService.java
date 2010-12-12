@@ -77,6 +77,8 @@ public class CouchDbLoginService extends AbstractLifeCycle implements LoginServi
         }
         return null;
     }
+    
+    
 
     private UserIdentity userIdentity(String username, Object credentials, String roles[]) {
         final Principal userPrincipal = new SerializablePrincipal(username);
@@ -118,5 +120,11 @@ public class CouchDbLoginService extends AbstractLifeCycle implements LoginServi
     @Override
     public void setIdentityService(IdentityService service) {
         this.identityService = service;
+    }
+
+    @Override
+    public void logout(UserIdentity user) {
+        activeUsers.remove(user.getUserPrincipal().getName());
+        
     }
 }

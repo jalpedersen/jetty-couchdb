@@ -85,7 +85,7 @@ public class CouchDbSSOAuthenticator extends LoginAuthenticator {
                 final UserContext userContext = couchDbAuthenticator.validate(sessionId);
                 final UserIdentity user = getIdentity(userContext);
                 if (user != null) {
-                    return new UserAuthentication(this, user);
+                    return new UserAuthentication(getAuthMethod(), user);
                 }
             }
             if (_deferred.isDeferred(httpResponse)) {

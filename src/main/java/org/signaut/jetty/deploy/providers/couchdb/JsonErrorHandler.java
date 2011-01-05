@@ -42,7 +42,6 @@ class JsonErrorHandler extends ErrorHandler {
     @Override
     protected void writeErrorPage(HttpServletRequest request, Writer writer, int code, String message,
             boolean showStacks) throws IOException {
-        // TODO Auto-generated method stub
         final Throwable exception = (Throwable) request.getAttribute("javax.servlet.error.exception");
         final String user = request.getUserPrincipal()==null?null:request.getUserPrincipal().getName();
         if (exception == null) {

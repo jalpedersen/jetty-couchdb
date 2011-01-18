@@ -10,11 +10,6 @@
   </properties>
   <dependencies>
     <dependency>
-      <groupId>org.signaut</groupId>
-      <artifactId>jetty-cluster</artifactId>
-      <version>1.0-SNAPSHOT</version>
-    </dependency>
-    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <version>1.6.0</version>
@@ -34,7 +29,6 @@
       <artifactId>jackson-jaxrs</artifactId>
       <version>1.6.1</version>
     </dependency>
-   
     <!-- Test dependencies -->
     <dependency>
       <groupId>junit</groupId>
@@ -43,15 +37,9 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.jmock</groupId>
-      <artifactId>jmock-junit4</artifactId>
-      <version>2.5.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>mockit</groupId>
-      <artifactId>jmockit</artifactId>
-      <version>0.999.3</version>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
+      <version>1.8.1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -76,5 +64,4 @@
       <layout>default</layout>
     </repository>
   </repositories>
-
 </project>

@@ -1,23 +1,23 @@
 package org.signaut.jetty.security;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import org.eclipse.jetty.server.UserIdentity;
 import org.junit.Assert;
 import org.junit.Test;
-import org.signaut.common.hazelcast.HazelcastFactory;
+
 import org.signaut.couchdb.CouchDbAuthenticator;
 import org.signaut.couchdb.impl.CouchDbAuthenticatorImpl;
 import org.signaut.jetty.server.security.CouchDbLoginService;
 import org.signaut.jetty.server.security.SerializableIdentityService;
-
-import com.hazelcast.core.HazelcastInstance;
 
 public class TestLoginService {
 
     @Test
     public void testLogin() {
         final CouchDbAuthenticator authenticator = new CouchDbAuthenticatorImpl("http://localhost:5984/_session");
-        final HazelcastInstance hz = new HazelcastFactory()
-                .loadHazelcastInstance("/test-login-cluster.xml", getClass());
+        final ConcurrentMap<String, String> hz = new ConcurrentHashMap<String, String>();
         final CouchDbLoginService service = new CouchDbLoginService("test", authenticator, hz);
         service.setIdentityService(new SerializableIdentityService());
 

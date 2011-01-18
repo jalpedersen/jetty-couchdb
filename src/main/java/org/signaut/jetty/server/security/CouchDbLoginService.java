@@ -39,21 +39,18 @@ import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.signaut.couchdb.CouchDbAuthenticator;
 import org.signaut.couchdb.UserContext;
 
-import com.hazelcast.core.HazelcastInstance;
-
 public class CouchDbLoginService extends AbstractLifeCycle implements LoginService {
 
     private IdentityService identityService;
     private final String name;
     private final CouchDbAuthenticator couchDbAuthenticator;
     private final ConcurrentMap<String, String> activeUsers;
-    private final String USERS_MAP = "signaut.activeUsers";
 
     public CouchDbLoginService(String name, CouchDbAuthenticator couchDbAuthenticator,
-                               HazelcastInstance hazelcastInstance) {
+                               ConcurrentMap<String, String> activeUsers) {
         this.name = name;
         this.couchDbAuthenticator = couchDbAuthenticator;
-        this.activeUsers = hazelcastInstance.getMap(USERS_MAP);
+        this.activeUsers = activeUsers;
     }
 
     @Override

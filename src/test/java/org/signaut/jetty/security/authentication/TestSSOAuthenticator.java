@@ -11,8 +11,6 @@ import org.eclipse.jetty.security.LoginService;
 import org.eclipse.jetty.security.ServerAuthException;
 import org.eclipse.jetty.security.UserAuthentication;
 import org.eclipse.jetty.server.Authentication;
-import org.jmock.Expectations;
-import org.jmock.Mockery;
 import org.junit.Assert;
 import org.junit.Test;
 import org.signaut.couchdb.CouchDbAuthenticator;
@@ -20,29 +18,26 @@ import org.signaut.couchdb.UserContext;
 import org.signaut.couchdb.impl.CouchDbAuthenticatorImpl;
 import org.signaut.jetty.server.security.SerializableIdentityService;
 import org.signaut.jetty.server.security.authentication.CouchDbSSOAuthenticator;
+import static org.mockito.Mockito.*;
 
 public class TestSSOAuthenticator {
-    final Mockery m = new Mockery();
     
     @Test
     public void testSso() throws ServerAuthException, IOException {
-        final HttpServletRequest req = m.mock(HttpServletRequest.class);
-        final HttpServletResponse res = m.mock(HttpServletResponse.class);
-        final CouchDbAuthenticator couchDbAuthenticator = m.mock(CouchDbAuthenticator.class);
-        final AuthConfiguration configuration = m.mock(AuthConfiguration.class);
-        final LoginService loginService = m.mock(LoginService.class);
+        final HttpServletRequest req = mock(HttpServletRequest.class);
+        final HttpServletResponse res = mock(HttpServletResponse.class);
+        final CouchDbAuthenticator couchDbAuthenticator = mock(CouchDbAuthenticator.class);
+        final AuthConfiguration configuration = mock(AuthConfiguration.class);
+        final LoginService loginService = mock(LoginService.class);
         final String sessionId = "424242abc";
         final String cookieString = "Something=blah; AuthSession="+sessionId+"; SomethingElse=blahblah";
-        m.checking(new Expectations() {{
-            oneOf(configuration).getIdentityService(); will(returnValue(new SerializableIdentityService()));
-            oneOf(configuration).getLoginService(); will(returnValue(loginService));
-            oneOf(configuration).isSessionRenewedOnAuthentication(); will(returnValue(false));
-            oneOf(req).getHeader(HttpHeaders.COOKIE); will(returnValue(cookieString));
-            oneOf(couchDbAuthenticator).decodeAuthToken(cookieString); will(returnValue(sessionId));
-            oneOf(couchDbAuthenticator).validate(sessionId); will(returnValue(new UserContext("jalp", null)));
-            oneOf(res).sendError(HttpServletResponse.SC_FORBIDDEN);
-            
-        }});
+        when(configuration.getIdentityService()).thenReturn(new SerializableIdentityService());
+        when(configuration.getLoginService()).thenReturn(loginService);
+        when(configuration.isSessionRenewedOnAuthentication()).thenReturn(false);
+        when(req.getHeader(HttpHeaders.COOKIE)).thenReturn(cookieString);
+        when(couchDbAuthenticator.decodeAuthToken(cookieString)).thenReturn(sessionId);
+        when(couchDbAuthenticator.validate(sessionId)).thenReturn(new UserContext("jalp", null));
+        
         final CouchDbSSOAuthenticator ssoAuthenticator = new CouchDbSSOAuthenticator(couchDbAuthenticator);
         ssoAuthenticator.setConfiguration(configuration);
         Authentication auth = ssoAuthenticator.validateRequest(req, res, true);

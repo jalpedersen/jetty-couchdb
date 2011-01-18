@@ -77,7 +77,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     private final AtomicLong sequence = new AtomicLong();
     
     private Thread changeListenerThread;
-    private String serverClasses[] = { "com.google.inject.", "org.slf4j." };
+    private String serverClasses[] = { "com.google.inject.", "org.slf4j.", "org.apache.log4j." };
     private String systemClasses[] = null;
 
     public CouchDbAppProvider(CouchDbDeployerProperties couchDeployerProperties, Factory authenticatorFactory,

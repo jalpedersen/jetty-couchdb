@@ -41,8 +41,10 @@ import org.eclipse.jetty.deploy.AppProvider;
 import org.eclipse.jetty.deploy.DeploymentManager;
 import org.eclipse.jetty.security.Authenticator;
 import org.eclipse.jetty.security.Authenticator.Factory;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.SessionManager;
 import org.eclipse.jetty.server.handler.ContextHandler;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
@@ -126,6 +128,11 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
                                 }
                             }
                             deploymentManager.addApp(new App(deploymentManager, CouchDbAppProvider.this, changeSet.getId()));
+                            ContextHandlerCollection chc = deploymentManager.getContexts();
+                            for (Handler c: chc.getHandlers()) {
+                                log.debug(String.format("Context: %s (isRunning: %s)",c,c.isRunning() ));
+                            }
+                            //log.debug(deploymentManager.getServer().dump());
                         }
                         sequence.set(changeSet.getSequence());
                     }
@@ -170,7 +177,12 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
 
         final File directory = new File(couchDeployerProperties.getTemporaryDirectory()+"/"+app.getOriginId());
         //Point war to full path of downloaded file
-        webapp.setWar(couchDbClient.downloadAttachment(app.getOriginId(), webapp.getWar(), directory));
+        final String path = couchDbClient.downloadAttachment(app.getOriginId(), webapp.getWar(), directory);
+        if (path == null) {
+            deploymentManager.removeApp(app);
+            throw new IllegalArgumentException("War file not found: " + webapp); 
+        }
+        webapp.setWar(path);
         return createContext(webapp);
     }
 

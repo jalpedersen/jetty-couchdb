@@ -129,8 +129,10 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
                             }
                             deploymentManager.addApp(new App(deploymentManager, CouchDbAppProvider.this, changeSet.getId()));
                             ContextHandlerCollection chc = deploymentManager.getContexts();
-                            for (Handler c: chc.getHandlers()) {
-                                log.debug(String.format("Context: %s (isRunning: %s)",c,c.isRunning() ));
+                            if (chc.getHandlers() != null) {
+                                for (Handler c: chc.getHandlers()) {
+                                    log.debug(String.format("Context: %s (isRunning: %s)",c,c.isRunning() ));
+                                }
                             }
                             //log.debug(deploymentManager.getServer().dump());
                         }

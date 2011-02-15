@@ -41,6 +41,7 @@ import org.eclipse.jetty.deploy.AppProvider;
 import org.eclipse.jetty.deploy.DeploymentManager;
 import org.eclipse.jetty.security.Authenticator;
 import org.eclipse.jetty.security.Authenticator.Factory;
+import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.SessionManager;
 import org.eclipse.jetty.server.handler.ContextHandler;
@@ -71,6 +72,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     private final CouchDbClient couchDbClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Logger log = LoggerFactory.getLogger(getClass());
+    private boolean restartingConnectorsRequired = true;
     /*
      * Latest couchdb sequence. Used in the event the connection between
      * this and couchdb is broken. If we did not have the latest sequence, all
@@ -92,12 +94,29 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         
     }
 
+    public boolean isRestartingConnectorsRequired() {
+        return restartingConnectorsRequired;
+    }
+
+    /**
+     * If set to <code>true</code> all connectors for the current server will be restarted when undeploying a
+     * webapp. This will help with permgen leak caused by misbehaving webapps, which set ThreadLocal variables without
+     * proper cleanup when done. Restarting the connectors causes all processing threads to stop and thereby clearing
+     * any residual threadlocal variables.
+     * 
+     * @param restartingConnectorsRequired
+     */
+    public void setRestartingConnectorsRequired(boolean restartingConnectorsRequired) {
+        this.restartingConnectorsRequired = restartingConnectorsRequired;
+    }
+
     @Override
     protected void doStart() {
         if (changeListenerThread != null) {
             throw new IllegalArgumentException("Already running");
         }
         changeListenerThread = new ChangeListener();
+        changeListenerThread.setName("CouchDB-change-listener");
         changeListenerThread.start();
     }
     
@@ -124,7 +143,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
                                 final App oldApp = deploymentManager.getAppByOriginId(changeSet.getId());
                                 if (oldApp != null) {
                                     log.debug("Undeploying {} at {}", oldApp.getOriginId(), oldApp.getContextPath());
-                                    deploymentManager.removeApp(oldApp);
+                                    undeploy(oldApp, restartingConnectorsRequired);
                                 }
                             }
                             deploymentManager.addApp(new App(deploymentManager, CouchDbAppProvider.this, changeSet.getId()));
@@ -161,6 +180,25 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         }
     }
     
+    private void undeploy(App app, boolean restart) {
+        if (restart) {
+            for (Connector c: deploymentManager.getServer().getConnectors()){
+                try {
+                    c.stop();
+                } catch (Exception e) {
+                    throw new IllegalStateException("Failed to stop connector " + c.getName(), e);
+                }
+                try {
+                    c.start();
+                } catch (Exception e) {
+                    throw new IllegalStateException("Failed to start connector " + c.getName(), e);
+                }
+                log.info("Connector {} restarted successfully", c.getName());
+            }
+        }
+        deploymentManager.removeApp(app);
+    }
+    
     @Override
     public void setDeploymentManager(DeploymentManager deploymentManager) {
         if (isRunning()) {
@@ -173,7 +211,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     public ContextHandler createContextHandler(App app) throws Exception {
         final WebAppDocument webapp = couchDbClient.getDocument(app.getOriginId(), WebAppDocument.class);
         if (webapp.getWar() == null) {
-            deploymentManager.removeApp(app);
+            undeploy(app, false);
             throw new IllegalArgumentException("No war file for " + webapp); 
         }
 
@@ -181,7 +219,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         //Point war to full path of downloaded file
         final String path = couchDbClient.downloadAttachment(app.getOriginId(), webapp.getWar(), directory);
         if (path == null) {
-            deploymentManager.removeApp(app);
+            undeploy(app, false);
             throw new IllegalArgumentException("War file not found: " + webapp); 
         }
         webapp.setWar(path);

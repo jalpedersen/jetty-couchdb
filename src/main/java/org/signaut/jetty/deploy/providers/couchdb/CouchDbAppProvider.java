@@ -169,7 +169,8 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
                 try {
                     log.info("CouchDB sequence: " + sequence.get());
                     couchDbClient.get("/_changes?feed=continuous" +
-                                      "&heartbeat="+couchDeployerProperties.getHeartbeat()+
+                                      //Heartbeat is in milliseconds
+                                      "&heartbeat="+couchDeployerProperties.getHeartbeat()*1000+
                                       "&filter="+couchDeployerProperties.getFilter()+
                                       "&since="+sequence.get(), 
                                       changeSetHandler);
@@ -244,6 +245,9 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
 
     private <T> T decode(String str, Class<T> type) {
         try {
+            if (str == null || str.isEmpty()) {
+                return null;
+            }
             return objectMapper.readValue(str, type);
         } catch (EOFException e) {
             return null;

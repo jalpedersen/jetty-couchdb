@@ -52,6 +52,8 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final Pattern authSessionCookiePattern = Pattern.compile(".*" + sessionTokenId + "=");
     private final SimpleHttpClient httpClient = new SimpleHttpClientImpl();
+    private final AuthHandler authHandler = new AuthHandler();
+    private final UserSessionHandler userSessionHandler = new UserSessionHandler();
     private final Map<String, String> authHeaders = new HashMap<String, String>();
     private final ObjectMapper objectMapper = new ObjectMapper(new JsonFactory()
             .enable(JsonParser.Feature.ALLOW_COMMENTS).enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES));
@@ -61,7 +63,7 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
             this.authUrl = new URL(authenticationUrl);
             authHeaders.put("Content-Type", "application/x-www-form-urlencoded; charset=UTF=8");
         } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("Bad authentication url: " + authenticationUrl, e);
+            throw new IllegalArgumentException(String.format("Bad authentication url: %s", authenticationUrl), e);
         }
     }
 
@@ -89,21 +91,20 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
             }
             return null;
         }
-
     }
 
     @Override
     public String authenticate(String username, String password) {
-        final String content = "name=" + username + "&password=" + password;
-        return httpClient.post(authUrl, new AuthHandler(), content, authHeaders);
+        final String content = new StringBuilder("name=").append(username).append("&password=").append(password).toString();
+        return httpClient.post(authUrl, authHandler, content, authHeaders);
     }
 
     @Override
     public UserContext validate(String sessionId) {
         final Map<String, String> headers = new HashMap<String, String>();
-        headers.put("Cookie", sessionTokenId + "=" + sessionId);
+        headers.put("Cookie", new StringBuilder(sessionTokenId).append('=').append(sessionId).toString());
         headers.put("X-CouchDB-WWW-Authenticate", "Cookie");
-        final UserSession session = httpClient.get(authUrl, new UserSessionHandler(), headers);
+        final UserSession session = httpClient.get(authUrl, userSessionHandler, headers);
         if (session != null && session.isOk()) {
             return session.getUserContext();
         }

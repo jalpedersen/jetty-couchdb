@@ -167,12 +167,12 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         public void run() {
             while (isRunning()) {
                 try {
-                    log.info("CouchDB sequence: " + sequence.get());
-                    couchDbClient.get("/_changes?feed=continuous" +
+                    log.info(String.format("CouchDB sequence: %d", sequence.get()));
+                    couchDbClient.get(new StringBuilder("/_changes?feed=continuous")
                                       //Heartbeat is in milliseconds
-                                      "&heartbeat="+couchDeployerProperties.getHeartbeat()*1000+
-                                      "&filter="+couchDeployerProperties.getFilter()+
-                                      "&since="+sequence.get(), 
+                                      .append("&heartbeat=").append(couchDeployerProperties.getHeartbeat()*1000)
+                                      .append("&filter=").append(couchDeployerProperties.getFilter())
+                                      .append("&since=").append(sequence.get()).toString(), 
                                       changeSetHandler);
                 } catch (Throwable t) {
                     log.error("While listening for changes", t);
@@ -187,12 +187,12 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
                 try {
                     c.stop();
                 } catch (Exception e) {
-                    throw new IllegalStateException("Failed to stop connector " + c.getName(), e);
+                    throw new IllegalStateException(String.format("Failed to stop connector %s", c.getName()), e);
                 }
                 try {
                     c.start();
                 } catch (Exception e) {
-                    throw new IllegalStateException("Failed to start connector " + c.getName(), e);
+                    throw new IllegalStateException(String.format("Failed to start connector %s", c.getName()), e);
                 }
                 log.info("Connector {} restarted successfully", c.getName());
             }
@@ -213,22 +213,22 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         final WebAppDocument webapp = couchDbClient.getDocument(app.getOriginId(), WebAppDocument.class);
         if (webapp.getWar() == null) {
             undeploy(app, false);
-            throw new IllegalArgumentException("No war file for " + webapp); 
+            throw new IllegalArgumentException(String.format("No war file for %s", webapp)); 
         }
 
-        final File directory = new File(couchDeployerProperties.getTemporaryDirectory()+"/"+app.getOriginId());
+        final File directory = new File(new StringBuilder(couchDeployerProperties.getTemporaryDirectory()).append("/").append(app.getOriginId()).toString());
         //Point war to full path of downloaded file
         final String path = couchDbClient.downloadAttachment(app.getOriginId(), webapp.getWar(), directory);
         if (path == null) {
             undeploy(app, false);
-            throw new IllegalArgumentException("War file not found: " + webapp); 
+            throw new IllegalArgumentException(String.format("War file not found: ", webapp)); 
         }
         webapp.setWar(path);
         return createContext(webapp);
     }
 
     private ContextHandler createContext(WebAppDocument desc) {
-        log.info("Creating new context for " + desc);
+        log.info("Creating new context for {}", desc);
         final WebAppContext context = new WebAppContext(desc.getName(), desc.getContextPath());
         context.setServerClasses(concat(context.getServerClasses(), serverClasses));
         context.setSystemClasses(concat(context.getSystemClasses(), systemClasses));

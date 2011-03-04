@@ -57,6 +57,6 @@ class JsonErrorHandler extends ErrorHandler {
     }
 
     private final String jsonStr(String string) {
-        return string == null ? null : "\"" + string + "\"";
+        return string == null ? null : new StringBuilder("\"").append(string).append("\"").toString();
     }
 }

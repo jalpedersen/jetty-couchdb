@@ -103,7 +103,7 @@ public class SimpleHttpClientImpl implements SimpleHttpClient {
                     stream.close();
                 }
             } catch (IOException e) {
-                log.warn("", e);
+                log.warn("Failed to close streams.", e);
             }
         }
     }

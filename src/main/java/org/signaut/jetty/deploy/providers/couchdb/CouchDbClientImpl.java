@@ -60,20 +60,20 @@ public class CouchDbClientImpl implements CouchDbClient {
         if (databaseUrl.endsWith("/")) {
             this.databaseUrl = databaseUrl;
         } else {
-            this.databaseUrl = databaseUrl + "/";
+            this.databaseUrl = new StringBuilder(databaseUrl).append("/").toString();
         }
-        final String authString = username + ":" + password;
+        final String authString = new StringBuilder(username).append(":").append(password).toString();
         final String base64EncodedAuth = Base64Variants.getDefaultVariant().encode(authString.getBytes());
-        headers.put("Authorization", "Basic " + base64EncodedAuth);
+        headers.put("Authorization", new StringBuilder("Basic ").append(base64EncodedAuth).toString());;
     }
 
     @Override
     public <T> T get(String uri, HttpResponseHandler<T> handler) {
         try {
-            final URL url = new URL(databaseUrl + uri);
+            final URL url = new URL(new StringBuilder(databaseUrl).append(uri).toString());
             return httpClient.get(url, handler, headers);
         } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("Bad URL:" + databaseUrl + uri, e);
+            throw new IllegalArgumentException(String.format("Bad URL: %s%s" ,databaseUrl, uri), e);
         }
     }
 
@@ -87,7 +87,7 @@ public class CouchDbClientImpl implements CouchDbClient {
         if ( ! directory.exists()) {
             directory.mkdirs();
         }
-        return get(documentId+"/"+name, new FileHandler(new File(directory, name)));
+        return get(new StringBuilder(documentId).append("/").append(name).toString(), new FileHandler(new File(directory, name)));
     }
 
     private final class FileHandler implements HttpResponseHandler<String> {
@@ -114,14 +114,14 @@ public class CouchDbClientImpl implements CouchDbClient {
                 }
                 return file.getAbsolutePath();
             } catch (FileNotFoundException e) {
-                log.warn("File not found: " + file);
+                log.warn(String.format("File not found: %s",file));
             } catch (IOException e) {
-                log.warn("While downloading " + file, e);
+                log.warn(String.format("While downloading: %s ", file), e);
             } finally {
                 try {
                     out.close();
                 } catch (IOException e) {
-                    log.warn("While downloading " + file,e);
+                    log.warn(String.format("While downloading: %s ", file), e);
                 }
             }
             return null;
@@ -139,7 +139,7 @@ public class CouchDbClientImpl implements CouchDbClient {
         public T handleInput(int responseCode, HttpURLConnection connection) {
             try {
                 if (responseCode >= 400) {
-                    throw new DocumentException("ResponseCode: " + responseCode);
+                    throw new DocumentException(String.format("ResponseCode: %d", responseCode));
                 }
                 return objectMapper.readValue(connection.getInputStream(), type);
             } catch (Exception e) {

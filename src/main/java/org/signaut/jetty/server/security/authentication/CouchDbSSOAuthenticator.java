@@ -119,13 +119,13 @@ public class CouchDbSSOAuthenticator extends LoginAuthenticator {
             try {
                 decodedAuth = B64Code.decode(auth.substring(auth.indexOf(' ')+1),StringUtil.__ISO_8859_1);
             } catch (UnsupportedEncodingException e) {
-                throw new IllegalArgumentException("Bad authorization: "+auth,e);
+                throw new IllegalArgumentException(String.format("Bad authorization: %s",auth),e);
             }
             final String authTokens[] = decodedAuth.split(":", 2);
             if (authTokens.length > 1) {
 
             } else {
-                throw new IllegalArgumentException("bad authentication: " + auth);
+                throw new IllegalArgumentException(String.format("bad authentication: %s", auth));
             }
             return couchDbAuthenticator.authenticate(authTokens[0], authTokens[1]);
         }

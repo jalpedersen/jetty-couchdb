@@ -95,14 +95,14 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
 
     @Override
     public String authenticate(String username, String password) {
-        final String content = new StringBuilder("name=").append(username).append("&password=").append(password).toString();
+        final String content = "name="+username+"&password="+password;
         return httpClient.post(authUrl, authHandler, content, authHeaders);
     }
 
     @Override
     public UserContext validate(String sessionId) {
         final Map<String, String> headers = new HashMap<String, String>();
-        headers.put("Cookie", new StringBuilder(sessionTokenId).append('=').append(sessionId).toString());
+        headers.put("Cookie", sessionTokenId+'='+sessionId);
         headers.put("X-CouchDB-WWW-Authenticate", "Cookie");
         final UserSession session = httpClient.get(authUrl, userSessionHandler, headers);
         if (session != null && session.isOk()) {

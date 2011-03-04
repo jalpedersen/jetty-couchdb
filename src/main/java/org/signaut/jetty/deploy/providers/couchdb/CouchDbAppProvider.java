@@ -168,11 +168,11 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
             while (isRunning()) {
                 try {
                     log.info(String.format("CouchDB sequence: %d", sequence.get()));
-                    couchDbClient.get(new StringBuilder("/_changes?feed=continuous")
+                    couchDbClient.get("/_changes?feed=continuous" +
                                       //Heartbeat is in milliseconds
-                                      .append("&heartbeat=").append(couchDeployerProperties.getHeartbeat()*1000)
-                                      .append("&filter=").append(couchDeployerProperties.getFilter())
-                                      .append("&since=").append(sequence.get()).toString(), 
+                                      "&heartbeat=" + couchDeployerProperties.getHeartbeat()*1000 +
+                                      "&filter=" + couchDeployerProperties.getFilter() +
+                                      "&since=" + sequence.get(), 
                                       changeSetHandler);
                 } catch (Throwable t) {
                     log.error("While listening for changes", t);
@@ -216,7 +216,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
             throw new IllegalArgumentException(String.format("No war file for %s", webapp)); 
         }
 
-        final File directory = new File(new StringBuilder(couchDeployerProperties.getTemporaryDirectory()).append("/").append(app.getOriginId()).toString());
+        final File directory = new File(couchDeployerProperties.getTemporaryDirectory()+"/"+app.getOriginId());
         //Point war to full path of downloaded file
         final String path = couchDbClient.downloadAttachment(app.getOriginId(), webapp.getWar(), directory);
         if (path == null) {

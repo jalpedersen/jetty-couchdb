@@ -60,17 +60,17 @@ public class CouchDbClientImpl implements CouchDbClient {
         if (databaseUrl.endsWith("/")) {
             this.databaseUrl = databaseUrl;
         } else {
-            this.databaseUrl = new StringBuilder(databaseUrl).append("/").toString();
+            this.databaseUrl = databaseUrl+"/";
         }
-        final String authString = new StringBuilder(username).append(":").append(password).toString();
+        final String authString = username + ":" + password;
         final String base64EncodedAuth = Base64Variants.getDefaultVariant().encode(authString.getBytes());
-        headers.put("Authorization", new StringBuilder("Basic ").append(base64EncodedAuth).toString());;
+        headers.put("Authorization", "Basic " + base64EncodedAuth);;
     }
 
     @Override
     public <T> T get(String uri, HttpResponseHandler<T> handler) {
         try {
-            final URL url = new URL(new StringBuilder(databaseUrl).append(uri).toString());
+            final URL url = new URL(databaseUrl+uri);
             return httpClient.get(url, handler, headers);
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException(String.format("Bad URL: %s%s" ,databaseUrl, uri), e);
@@ -87,7 +87,7 @@ public class CouchDbClientImpl implements CouchDbClient {
         if ( ! directory.exists()) {
             directory.mkdirs();
         }
-        return get(new StringBuilder(documentId).append("/").append(name).toString(), new FileHandler(new File(directory, name)));
+        return get(documentId+"/"+name, new FileHandler(new File(directory, name)));
     }
 
     private final class FileHandler implements HttpResponseHandler<String> {

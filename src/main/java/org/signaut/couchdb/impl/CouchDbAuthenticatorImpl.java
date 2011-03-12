@@ -32,6 +32,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import org.codehaus.jackson.JsonFactory;
@@ -53,10 +59,15 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
     private final Pattern authSessionCookiePattern = Pattern.compile(".*" + sessionTokenId + "=");
     private final SimpleHttpClient httpClient = new SimpleHttpClientImpl();
     private final AuthHandler authHandler = new AuthHandler();
+    private final ConcurrentHashMap<String, UserContext> sessionCache = new ConcurrentHashMap<String, UserContext>();
     private final UserSessionHandler userSessionHandler = new UserSessionHandler();
     private final Map<String, String> authHeaders = new HashMap<String, String>();
     private final ObjectMapper objectMapper = new ObjectMapper(new JsonFactory()
             .enable(JsonParser.Feature.ALLOW_COMMENTS).enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES));
+    private final ScheduledExecutorService scheduler;
+    private final ScheduledFuture<?> cacheClearTask;
+    private final int cacheClearDelay = 60;
+    private final long cacheSlack = 60*1000;
 
     public CouchDbAuthenticatorImpl(String authenticationUrl) {
         try {
@@ -65,7 +76,35 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException(String.format("Bad authentication url: %s", authenticationUrl), e);
         }
+        scheduler = Executors.newSingleThreadScheduledExecutor();
+        cacheClearTask = scheduler.scheduleWithFixedDelay(new Runnable() {
+            public void run() {
+                final long expiryDate = System.currentTimeMillis() - cacheSlack;
+                for (Entry<String, UserContext> ctx: sessionCache.entrySet()) {
+                    if (ctx.getValue().getCreationTimestamp() < expiryDate) {
+                        sessionCache.remove(ctx.getKey());
+                    }
+                }
+            }
+        }, cacheClearDelay, cacheClearDelay, TimeUnit.SECONDS);
     }
+
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            if (cacheClearTask != null) {
+                cacheClearTask.cancel(true);
+            }
+            if (scheduler != null) {
+                scheduler.shutdown();
+            }
+            super.finalize();
+        } catch (Throwable t) {
+            log.error("While cleaning up CouchDbAuthenticator",t);
+        }
+    }
+
+
 
     private final class AuthHandler implements HttpResponseHandler<String> {
 
@@ -101,11 +140,17 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
 
     @Override
     public UserContext validate(String sessionId) {
+        final UserContext cached = sessionCache.get(sessionId) ;
+        if (cached != null) {
+            return cached;
+        }
         final Map<String, String> headers = new HashMap<String, String>();
         headers.put("Cookie", sessionTokenId+'='+sessionId);
         headers.put("X-CouchDB-WWW-Authenticate", "Cookie");
         final UserSession session = httpClient.get(authUrl, userSessionHandler, headers);
         if (session != null && session.isOk()) {
+            sessionCache.put(sessionId,
+                             session.getUserContext());
             return session.getUserContext();
         }
         return null;

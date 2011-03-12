@@ -9,7 +9,7 @@ This jetty extension provides:
 
 See [camelback](github.com/jalpedersen/camelback) for simple example using both
 jetty-couchdb and
-[jetty-cluster](http://github.com/jalpedersen/jetty-cluster).
+[jetty-hazelcast](http://github.com/jalpedersen/jetty-hazelcast).
 
 
 AppProvider

@@ -32,10 +32,14 @@ import java.util.Arrays;
 public class UserContext {
     private String name;
     private String roles[];
+    private long creationTimestamp;
 
-    public UserContext() {}
+    public UserContext() {
+        creationTimestamp = System.currentTimeMillis();
+    }
     
     public UserContext(String name, String[] roles) {
+        this();
         this.name = name;
         this.roles = roles;
     }
@@ -54,6 +58,10 @@ public class UserContext {
 
     public void setRoles(String[] roles) {
         this.roles = roles;
+    }
+
+    public long getCreationTimestamp() {
+        return creationTimestamp;
     }
 
     @Override

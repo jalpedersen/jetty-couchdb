@@ -66,8 +66,8 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
             .enable(JsonParser.Feature.ALLOW_COMMENTS).enable(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES));
     private final ScheduledExecutorService scheduler;
     private final ScheduledFuture<?> cacheClearTask;
-    private final int cacheClearDelay = 60;
-    private final long cacheSlack = 60*1000;
+    private final int cacheClearDelay = 120;
+    private final long cacheSlack = 5*1000;
 
     public CouchDbAuthenticatorImpl(String authenticationUrl) {
         try {
@@ -142,7 +142,10 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
     public UserContext validate(String sessionId) {
         final UserContext cached = sessionCache.get(sessionId) ;
         if (cached != null) {
-            return cached;
+            if (cached.getCreationTimestamp() > System.currentTimeMillis() - cacheSlack) {
+                return cached;
+            }
+            sessionCache.remove(sessionId);
         }
         final Map<String, String> headers = new HashMap<String, String>();
         headers.put("Cookie", sessionTokenId+'='+sessionId);

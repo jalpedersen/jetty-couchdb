@@ -33,7 +33,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.eclipse.jetty.deploy.App;
@@ -73,12 +72,14 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Logger log = LoggerFactory.getLogger(getClass());
     private boolean restartingConnectorsRequired = true;
+    private long changeSetGracePeriod = 5000;
     /*
      * Latest couchdb sequence. Used in the event the connection between
      * this and couchdb is broken. If we did not have the latest sequence, all
      * apps would be redeployed, and we don't want that.
+     * This is a string in order to support BigCouch
      */
-    private final AtomicLong sequence = new AtomicLong();
+    private String lastSequence = null;
     
     private Thread changeListenerThread;
     private String serverClasses[] = { "com.google.inject.", "org.slf4j.", "ch.qos.logback", "org.apache.log4j.", "org.signaut." };
@@ -155,7 +156,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
                             }
                             //log.debug(deploymentManager.getServer().dump());
                         }
-                        sequence.set(changeSet.getSequence());
+                        lastSequence = changeSet.getSequence();
                     }
                 } catch (IOException e) {
                     //Ignore
@@ -167,13 +168,19 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         public void run() {
             while (isRunning()) {
                 try {
-                    log.info(String.format("CouchDB sequence: %d", sequence.get()));
+                    log.info(String.format("CouchDB sequence: %s", lastSequence));
+                    final long beforeRequest = System.currentTimeMillis();
                     couchDbClient.get("/_changes?feed=continuous" +
                                       //Heartbeat is in milliseconds
                                       "&heartbeat=" + couchDeployerProperties.getHeartbeat()*1000 +
                                       "&filter=" + couchDeployerProperties.getFilter() +
-                                      "&since=" + sequence.get(), 
+                                      (lastSequence==null?"":"&since=" + lastSequence), 
                                       changeSetHandler);
+                    final long sinceLastRequest = System.currentTimeMillis() - beforeRequest;
+                    //Back off if CouchDB is not available at the moment.
+                    if (sinceLastRequest < changeSetGracePeriod) {
+                        Thread.sleep(changeSetGracePeriod);
+                    }
                 } catch (Throwable t) {
                     log.error("While listening for changes", t);
                 }

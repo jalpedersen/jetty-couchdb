@@ -31,19 +31,20 @@ import org.codehaus.jackson.annotate.JsonAnySetter;
 import org.codehaus.jackson.annotate.JsonProperty;
 
 class ChangeSet {
+    //Sequences are strings so we can support BigCouch
     @JsonProperty("seq")
-    private Long sequence;
+    private String sequence;
     @JsonProperty("last_seq")
-    private Long lastSequence;
+    private String lastSequence;
     @JsonProperty("_id")
     private String id;
     private boolean deleted;
 
-    public Long getSequence() {
+    public String getSequence() {
         return sequence;
     }
 
-    public void setSequence(Long sequence) {
+    public void setSequence(String sequence) {
         this.sequence = sequence;
     }
 
@@ -63,11 +64,11 @@ class ChangeSet {
         this.deleted = deleted;
     }
 
-    public Long getLastSequence() {
+    public String getLastSequence() {
         return lastSequence;
     }
 
-    public void setLastSequence(Long lastSequence) {
+    public void setLastSequence(String lastSequence) {
         this.lastSequence = lastSequence;
     }
 

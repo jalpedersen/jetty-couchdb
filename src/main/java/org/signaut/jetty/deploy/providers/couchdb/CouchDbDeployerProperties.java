@@ -33,7 +33,7 @@ public class CouchDbDeployerProperties {
     private String username;
     private String password;
     private String filter;
-    private int heartbeat = 10;
+    private int heartbeat = 5;
     private String temporaryDirectory = System.getProperty("java.io.tmpdir");
 
     public CouchDbDeployerProperties() {

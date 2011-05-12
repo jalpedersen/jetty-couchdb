@@ -26,6 +26,18 @@ need clustering of web-session data as well). Note that apps are
 redeployed on document changes automatically, thanks to the excellent
 change notification API in CouchDB.
 
+One of the nice features of this AppProvider is that is supports
+replacement of the underlying connector's thread-pool. While this in
+itself does not sound existing, the consequence of this is that most
+cases of perm-gen leaks are eliminated by this feature. This is
+because most perm-gen leaks are caused by frameworks putting all sorts
+of things in thread-local variables without cleaning up after
+themselves. Normally this is not a problem since these variables will
+die along with the thread. However, some of the threads in a
+thread-pool will never terminate, and so the thread-local variables
+will live on as long as the pool. By replacing the pool and stopping
+the old one, we kill off any lingering thread-local variables.
+
 Single-Sign-On
 --------------
 `org.signaut.jetty.server.security.authentication.CouchDbSSOAuthenticator`

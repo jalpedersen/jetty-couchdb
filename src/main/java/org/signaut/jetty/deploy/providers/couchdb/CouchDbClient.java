@@ -47,7 +47,17 @@ public interface CouchDbClient {
     <T> T get(String uri, HttpResponseHandler<T> handler);
 
     <T> T getDocument(String documentId, Class<T> type);
+    
+    DocumentStatus putDocument(String id, Object document);
+    
+    DocumentStatus postDocument(String id, Object document);
 
     String downloadAttachment(String documentId, String name, File directory);
+
+    DocumentStatus putDocument(String id, String document);
+
+    DocumentStatus postDocument(String id, String document);
+    
+    DocumentStatus createDatabase();
 
 }

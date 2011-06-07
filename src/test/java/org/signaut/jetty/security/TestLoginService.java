@@ -29,7 +29,7 @@ public class TestLoginService {
         Assert.assertNull("anonymous == null", emptyUser);
 
         UserIdentity id = service.login("knownUser", "myPassword");
-        Assert.assertNotNull("User was null", id);
+        Assert.assertNotNull("User was null (Make sure that a user named 'knownUser' with password 'myPassword' exists in your local couchdb instance)", id);
 
     }
 

@@ -37,6 +37,8 @@ public interface SimpleHttpClient {
     }
 
     <T> T post(URL url, HttpResponseHandler<T> handler, String content, Map<String, String> headers);
+    
+    <T> T put(URL url, HttpResponseHandler<T> handler, String content, Map<String, String> headers);
 
     <T> T get(URL url, HttpResponseHandler<T> handler, Map<String, String> headers);
 }

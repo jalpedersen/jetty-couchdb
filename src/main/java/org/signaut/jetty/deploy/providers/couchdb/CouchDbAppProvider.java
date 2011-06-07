@@ -30,11 +30,16 @@ package org.signaut.jetty.deploy.providers.couchdb;
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.util.Map;
+import java.util.Scanner;
 
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
 import org.eclipse.jetty.deploy.App;
 import org.eclipse.jetty.deploy.AppProvider;
 import org.eclipse.jetty.deploy.DeploymentManager;
@@ -85,6 +90,8 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     private final Logger log = LoggerFactory.getLogger(getClass());
     private boolean restartingConnectorsRequired = true;
     private long changeSetGracePeriod = 5000;
+    private String designDocumentTemplate = "/designdocument/webapps.json";
+    
     /*
      * Latest couchdb sequence. Used in the event the connection between
      * this and couchdb is broken. If we did not have the latest sequence, all
@@ -187,9 +194,46 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         if (changeListenerThread != null) {
             throw new IllegalArgumentException("Already running");
         }
+        
+        verifyDesignDocument();
+        
         changeListenerThread = new ChangeListener();
         changeListenerThread.setName("CouchDB-change-listener");
         changeListenerThread.start();
+    }
+    
+    private void verifyDesignDocument() {
+        final String designDocumentId = "_design/"+couchDeployerProperties.getDesignDocument();
+        final Map<String, Object> dbInfo = couchDbClient.get("", new GenericMapHandler());
+        if (dbInfo == null) {
+            DocumentStatus dbCreation = couchDbClient.createDatabase();
+            log.info("Created database: " + couchDeployerProperties.getDatabaseUrl() + ": " + dbCreation);
+        }
+        final Map<String, Object> existing = couchDbClient.get(designDocumentId, new GenericMapHandler());
+        if (existing == null) {
+            log.info("No design document found - creating");
+            final InputStream designInput = getClass().getResourceAsStream(designDocumentTemplate);
+            if (designInput != null) {
+                final String designDocumentContent = new Scanner(designInput, "UTF-8").useDelimiter("\\A").next();
+                log.info("Updating design document: " + couchDbClient.putDocument(designDocumentId, designDocumentContent));
+            } else {
+                log.warn("Could not find " + designDocumentTemplate);
+            }
+        }
+    }
+    
+    public final class GenericMapHandler implements HttpResponseHandler<Map<String, Object>> {
+        private final TypeReference<Map<String, Object>> mapType = new TypeReference<Map<String,Object>>() {};
+        @Override
+        public Map<String, Object> handleInput(int responseCode, HttpURLConnection connection) {
+            try {
+                return objectMapper.readValue(connection.getInputStream(), mapType);
+            } catch (FileNotFoundException e) {
+                return null;
+            } catch (Exception e) {
+                throw new IllegalArgumentException(String.format("While parsing response."), e);
+            }
+        }
     }
     
     private final class ChangeListener extends Thread {

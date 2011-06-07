@@ -33,17 +33,19 @@ public class CouchDbDeployerProperties {
     private String username;
     private String password;
     private String filter;
+    private String designDocument;
     private int heartbeat = 5;
     private String temporaryDirectory = System.getProperty("java.io.tmpdir");
 
     public CouchDbDeployerProperties() {
     }
 
-    public CouchDbDeployerProperties(String databaseUrl, String username, String password, String filter, int heartbeat) {
+    public CouchDbDeployerProperties(String databaseUrl, String username, String password, String designDocument, String filter, int heartbeat) {
         super();
         this.databaseUrl = databaseUrl;
         this.username = username;
         this.password = password;
+        this.designDocument = designDocument;
         this.filter = filter;
         this.heartbeat = heartbeat;
     }
@@ -52,12 +54,8 @@ public class CouchDbDeployerProperties {
         return databaseUrl;
     }
 
-    public String getUsername() {
-        return username;
-    }
-
-    public String getPassword() {
-        return password;
+    public String getDesignDocument() {
+        return designDocument;
     }
 
     public String getFilter() {
@@ -68,18 +66,29 @@ public class CouchDbDeployerProperties {
         return heartbeat;
     }
 
+    public String getPassword() {
+        return password;
+    }
+
+    public String getTemporaryDirectory() {
+        return temporaryDirectory;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
     public CouchDbDeployerProperties setDatabaseUrl(String databaseUrl) {
         this.databaseUrl = databaseUrl;
         return this;
     }
 
-    public CouchDbDeployerProperties setUsername(String username) {
-        this.username = username;
-        return this;
+    public void setDesignDocument(String designDocument) {
+        this.designDocument = designDocument;
     }
 
-    public CouchDbDeployerProperties setPassword(String password) {
-        this.password = password;
+    public CouchDbDeployerProperties setFilter(String filter) {
+        this.filter = filter;
         return this;
     }
 
@@ -88,20 +97,18 @@ public class CouchDbDeployerProperties {
         return this;
     }
 
-    public CouchDbDeployerProperties setFilter(String filter) {
-        this.filter = filter;
+    public CouchDbDeployerProperties setPassword(String password) {
+        this.password = password;
         return this;
-    }
-
-    public String getTemporaryDirectory() {
-        return temporaryDirectory;
     }
 
     public CouchDbDeployerProperties setTemporaryDirectory(String temporaryDirectory) {
         this.temporaryDirectory = temporaryDirectory;
         return this;
     }
-    
-    
 
+    public CouchDbDeployerProperties setUsername(String username) {
+        this.username = username;
+        return this;
+    }
 }

@@ -48,6 +48,11 @@ public class SimpleHttpClientImpl implements SimpleHttpClient {
     public <T> T post(URL url, HttpResponseHandler<T> handler, String content, Map<String, String> headers) {
         return send("POST", url, handler, content, headers);
     }
+    
+    @Override
+    public <T> T put(URL url, HttpResponseHandler<T> handler, String content, Map<String, String> headers) {
+        return send("PUT", url, handler, content, headers);
+    }
 
     @Override
     public <T> T get(URL url, HttpResponseHandler<T> handler, Map<String, String> headers) {
@@ -107,4 +112,5 @@ public class SimpleHttpClientImpl implements SimpleHttpClient {
             }
         }
     }
+
 }

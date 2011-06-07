@@ -30,7 +30,6 @@ package org.signaut.jetty.deploy.providers.couchdb;
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -39,7 +38,6 @@ import java.util.Map;
 import java.util.Scanner;
 
 import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
 import org.eclipse.jetty.deploy.App;
 import org.eclipse.jetty.deploy.AppProvider;
 import org.eclipse.jetty.deploy.DeploymentManager;
@@ -56,6 +54,11 @@ import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.eclipse.jetty.util.thread.ThreadPool;
 import org.eclipse.jetty.webapp.WebAppContext;
+import org.signaut.common.couchdb.ChangeSet;
+import org.signaut.common.couchdb.CouchDbClient;
+import org.signaut.common.couchdb.CouchDbClientImpl;
+import org.signaut.common.couchdb.Document;
+import org.signaut.common.couchdb.DocumentStatus;
 import org.signaut.common.http.SimpleHttpClient.HttpResponseHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -204,12 +207,12 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     
     private void verifyDesignDocument() {
         final String designDocumentId = "_design/"+couchDeployerProperties.getDesignDocument();
-        final Map<String, Object> dbInfo = couchDbClient.get("", new GenericMapHandler());
+        final Map<String, Object> dbInfo = couchDbClient.get("", couchDbClient.getGenericMapHandler());
         if (dbInfo == null) {
             DocumentStatus dbCreation = couchDbClient.createDatabase();
             log.info("Created database: " + couchDeployerProperties.getDatabaseUrl() + ": " + dbCreation);
         }
-        final Map<String, Object> existing = couchDbClient.get(designDocumentId, new GenericMapHandler());
+        final Document existing = couchDbClient.get(designDocumentId, couchDbClient.getDocumentHandler());
         if (existing == null) {
             log.info("No design document found - creating");
             final InputStream designInput = getClass().getResourceAsStream(designDocumentTemplate);
@@ -222,19 +225,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         }
     }
     
-    public final class GenericMapHandler implements HttpResponseHandler<Map<String, Object>> {
-        private final TypeReference<Map<String, Object>> mapType = new TypeReference<Map<String,Object>>() {};
-        @Override
-        public Map<String, Object> handleInput(int responseCode, HttpURLConnection connection) {
-            try {
-                return objectMapper.readValue(connection.getInputStream(), mapType);
-            } catch (FileNotFoundException e) {
-                return null;
-            } catch (Exception e) {
-                throw new IllegalArgumentException(String.format("While parsing response."), e);
-            }
-        }
-    }
+   
     
     private final class ChangeListener extends Thread {
         final HttpResponseHandler<Void> changeSetHandler = new HttpResponseHandler<Void>(){

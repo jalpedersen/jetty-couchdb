@@ -25,7 +25,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.signaut.jetty.deploy.providers.couchdb;
+package org.signaut.common.couchdb;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,7 +34,7 @@ import org.codehaus.jackson.annotate.JsonAnyGetter;
 import org.codehaus.jackson.annotate.JsonAnySetter;
 import org.codehaus.jackson.annotate.JsonProperty;
 
-class Document {
+public class Document {
     @JsonProperty("_attachments")
     private Map<String, Attachment> attachments;
     @JsonProperty("_id")

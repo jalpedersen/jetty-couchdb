@@ -25,39 +25,60 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.signaut.jetty.deploy.providers.couchdb;
+package org.signaut.common.couchdb;
 
-import java.io.File;
+import org.codehaus.jackson.annotate.JsonAnySetter;
+import org.codehaus.jackson.annotate.JsonProperty;
 
-import org.signaut.common.http.SimpleHttpClient.HttpResponseHandler;
+public class ChangeSet {
+    //Sequences are strings so we can support BigCouch
+    @JsonProperty("seq")
+    private String sequence;
+    @JsonProperty("last_seq")
+    private String lastSequence;
+    @JsonProperty("_id")
+    private String id;
+    private boolean deleted;
 
-public interface CouchDbClient {
-    public static class DocumentException extends RuntimeException {
-        private static final long serialVersionUID = -7152085677408141413L;
-
-        public DocumentException(String message, Throwable cause) {
-            super(message, cause);
-        }
-
-        public DocumentException(String message) {
-            super(message);
-        }
+    public String getSequence() {
+        return sequence;
     }
 
-    <T> T get(String uri, HttpResponseHandler<T> handler);
+    public void setSequence(String sequence) {
+        this.sequence = sequence;
+    }
 
-    <T> T getDocument(String documentId, Class<T> type);
-    
-    DocumentStatus putDocument(String id, Object document);
-    
-    DocumentStatus postDocument(String id, Object document);
+    public String getId() {
+        return id;
+    }
 
-    String downloadAttachment(String documentId, String name, File directory);
+    public void setId(String id) {
+        this.id = id;
+    }
 
-    DocumentStatus putDocument(String id, String document);
+    public boolean isDeleted() {
+        return deleted;
+    }
 
-    DocumentStatus postDocument(String id, String document);
-    
-    DocumentStatus createDatabase();
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
 
+    public String getLastSequence() {
+        return lastSequence;
+    }
+
+    public void setLastSequence(String lastSequence) {
+        this.lastSequence = lastSequence;
+    }
+
+    @Override
+    public String toString() {
+        return "ChangeSet [sequence=" + sequence + ", id=" + id + ", deleted=" + deleted + "]";
+    }
+
+    @JsonAnySetter
+    public void setOptional(String key, Object value) {
+        // Ignore
+    }
 }

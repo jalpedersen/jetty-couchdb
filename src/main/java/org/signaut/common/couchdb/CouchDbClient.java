@@ -25,60 +25,44 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.signaut.jetty.deploy.providers.couchdb;
+package org.signaut.common.couchdb;
 
-import org.codehaus.jackson.annotate.JsonAnySetter;
-import org.codehaus.jackson.annotate.JsonProperty;
+import java.io.File;
+import java.util.Map;
 
-class ChangeSet {
-    //Sequences are strings so we can support BigCouch
-    @JsonProperty("seq")
-    private String sequence;
-    @JsonProperty("last_seq")
-    private String lastSequence;
-    @JsonProperty("_id")
-    private String id;
-    private boolean deleted;
+import org.signaut.common.http.SimpleHttpClient.HttpResponseHandler;
 
-    public String getSequence() {
-        return sequence;
+public interface CouchDbClient {
+    public static class DocumentException extends RuntimeException {
+        private static final long serialVersionUID = -7152085677408141413L;
+
+        public DocumentException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public DocumentException(String message) {
+            super(message);
+        }
     }
 
-    public void setSequence(String sequence) {
-        this.sequence = sequence;
-    }
+    <T> T get(String uri, HttpResponseHandler<T> handler);
 
-    public String getId() {
-        return id;
-    }
+    <T> T getDocument(String documentId, Class<T> type);
+    
+    DocumentStatus putDocument(String id, Object document);
+    
+    DocumentStatus postDocument(String id, Object document);
 
-    public void setId(String id) {
-        this.id = id;
-    }
+    String downloadAttachment(String documentId, String name, File directory);
 
-    public boolean isDeleted() {
-        return deleted;
-    }
+    DocumentStatus putDocument(String id, String document);
 
-    public void setDeleted(boolean deleted) {
-        this.deleted = deleted;
-    }
+    DocumentStatus postDocument(String id, String document);
+    
+    DocumentStatus createDatabase();
+    
+    HttpResponseHandler<Map<String, Object>> getGenericMapHandler();
+    
+    HttpResponseHandler<Document> getDocumentHandler();
 
-    public String getLastSequence() {
-        return lastSequence;
-    }
-
-    public void setLastSequence(String lastSequence) {
-        this.lastSequence = lastSequence;
-    }
-
-    @Override
-    public String toString() {
-        return "ChangeSet [sequence=" + sequence + ", id=" + id + ", deleted=" + deleted + "]";
-    }
-
-    @JsonAnySetter
-    public void setOptional(String key, Object value) {
-        // Ignore
-    }
 }

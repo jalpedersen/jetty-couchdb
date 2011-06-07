@@ -1,0 +1,11 @@
+{ 
+	"language": "javascript",
+	"filters": { 
+	    "appfilter": "function(doc, req)\n  {return (doc.type && doc.type == 'webapp');\n}"
+	},
+    "views": {
+        "apps": {
+            "map": "function(doc, req) {\n  return (doc.type && doc.type == 'webapp');\n}"
+        }
+    }     
+}

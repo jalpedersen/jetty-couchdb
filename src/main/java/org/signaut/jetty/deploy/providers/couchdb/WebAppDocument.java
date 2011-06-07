@@ -27,6 +27,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package org.signaut.jetty.deploy.providers.couchdb;
 
+import org.signaut.common.couchdb.Document;
+
 public class WebAppDocument extends Document {
     private String name;
     private String contextPath;

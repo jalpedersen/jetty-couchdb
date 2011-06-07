@@ -25,7 +25,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.signaut.jetty.deploy.providers.couchdb;
+package org.signaut.common.couchdb;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -38,10 +38,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
 
 import org.codehaus.jackson.Base64Variants;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
 import org.signaut.common.http.SimpleHttpClient;
 import org.signaut.common.http.SimpleHttpClient.HttpResponseHandler;
 import org.signaut.common.http.SimpleHttpClientImpl;
@@ -209,6 +209,42 @@ public class CouchDbClientImpl implements CouchDbClient {
             throw new IllegalArgumentException(String.format("While encoding a %s", document), e);
         }
     }
-    
 
+    private final class GenericMapHandler implements HttpResponseHandler<Map<String, Object>> {
+        private final TypeReference<Map<String, Object>> mapType = new TypeReference<Map<String,Object>>() {};
+        @Override
+        public Map<String, Object> handleInput(int responseCode, HttpURLConnection connection) {
+            try {
+                return objectMapper.readValue(connection.getInputStream(), mapType);
+            } catch (FileNotFoundException e) {
+                return null;
+            } catch (Exception e) {
+                throw new IllegalArgumentException(String.format("While parsing response."), e);
+            }
+        }
+    }
+
+    private final class GenericDocumentHandler implements HttpResponseHandler<Document>{
+
+        @Override
+        public Document handleInput(int responseCode, HttpURLConnection connection) {
+            try {
+                return objectMapper.readValue(connection.getInputStream(), Document.class);
+            } catch (FileNotFoundException e) {
+                return null;
+            } catch (Exception e) {
+                throw new IllegalArgumentException(String.format("While parsing response."), e);
+            }
+        }
+    }
+    
+    @Override
+    public HttpResponseHandler<Map<String, Object>> getGenericMapHandler() {
+        return new GenericMapHandler();
+    }
+
+    @Override
+    public HttpResponseHandler<Document> getDocumentHandler() {
+        return new GenericDocumentHandler();
+    }
 }

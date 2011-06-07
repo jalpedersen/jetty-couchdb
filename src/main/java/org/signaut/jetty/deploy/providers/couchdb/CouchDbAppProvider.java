@@ -264,26 +264,29 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
             for (Connector c: deploymentManager.getServer().getConnectors()){
                 if (threadPoolProvider != null && c instanceof AbstractConnector) {
                     final AbstractConnector ac = (AbstractConnector)c;
-                    final ThreadPool oldThreadPool = ac.getThreadPool();
-                    //Simply restart the old thread pool, if no provider is available.
                     final ThreadPool newThreadPool = threadPoolProvider.get();
                     try {
-                        if (newThreadPool instanceof AbstractLifeCycle) {
-                            ((AbstractLifeCycle) newThreadPool).start();
-                        }
-                        ac.setThreadPool(newThreadPool);
-                        if (oldThreadPool instanceof AbstractLifeCycle) {
-                            //Do not server's thread pool - nor the new one 
-                            //if the provider gave us the same pool again.
-                            if (c.getServer().getThreadPool() != oldThreadPool &&
-                                    oldThreadPool != newThreadPool) {
-                                ((AbstractLifeCycle) oldThreadPool).stop();
+                        if (newThreadPool != null) {
+                            if (newThreadPool instanceof AbstractLifeCycle) {
+                                ((AbstractLifeCycle) newThreadPool).start();
                             }
+                            ac.setThreadPool(newThreadPool);
+                            final ThreadPool oldThreadPool = ac.getThreadPool();
+                            if (oldThreadPool instanceof AbstractLifeCycle) {
+                                //Do not stop server's thread pool - nor the new one 
+                                //if the provider gave us the same pool again.
+                                if (c.getServer().getThreadPool() != oldThreadPool &&
+                                        oldThreadPool != newThreadPool) {
+                                    ((AbstractLifeCycle) oldThreadPool).stop();
+                                }
+                            }
+                            log.debug("Replaced threadpool for " + c.getName());
+                        } else { 
+                            log.warn("No new thread pool was provided for " + c.getName());
                         }
                     } catch (Exception e) {
                         log.error(String.format("While replacing threadpool for connector %s", c.getName()), e);
                     }
-                    log.debug("Replaced threadpool for " + c.getName());
                 } else {
                     try {
                         c.stop();

@@ -41,7 +41,7 @@ public class Document {
     private String id;
     @JsonProperty("_rev")
     private String revision;
-    private Map<String, Object> properties = new HashMap<String, Object>();
+    private Map<String, Object> optionalFields = new HashMap<String, Object>();
 
     public String getId() {
         return id;
@@ -69,14 +69,18 @@ public class Document {
         this.attachments = attachments;
     }
 
+    public Object get(String key) {
+        return optionalFields.get(key);
+    }
+
     @JsonAnyGetter
-    public Map<String, Object> getProperties() {
-        return properties;
+    public Map<String, Object> getOptional() {
+        return optionalFields;
     }
 
     @JsonAnySetter
-    public Document setOptional(String key, Object value) {
-        properties.put(key, value);
+    public Document set(String key, Object value) {
+        optionalFields.put(key, value);
         return this;
     }
 

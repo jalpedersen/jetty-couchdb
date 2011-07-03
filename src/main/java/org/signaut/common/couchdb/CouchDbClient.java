@@ -51,18 +51,25 @@ public interface CouchDbClient {
     
     DocumentStatus putDocument(String id, Object document);
     
-    DocumentStatus postDocument(String id, Object document);
+    DocumentStatus postDocument(Object document);
 
     String downloadAttachment(String documentId, String name, File directory);
 
     DocumentStatus putDocument(String id, String document);
 
-    DocumentStatus postDocument(String id, String document);
-    
+    DocumentStatus postDocument(String document);
+
+    DocumentStatus deleteDocument(String id);
+
     DocumentStatus createDatabase();
-    
+
     HttpResponseHandler<Map<String, Object>> getGenericMapHandler();
-    
+
     HttpResponseHandler<Document> getDocumentHandler();
 
+    CouchDbUser getUser(String name);
+
+    CouchDbUser updateUser(CouchDbUser user);
+
+    boolean deleteUser(CouchDbUser user);
 }

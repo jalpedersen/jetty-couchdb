@@ -65,7 +65,7 @@ public class CouchDbClientImpl implements CouchDbClient {
         }
         final String authString = username + ":" + password;
         final String base64EncodedAuth = Base64Variants.getDefaultVariant().encode(authString.getBytes());
-        headers.put("Authorization", "Basic " + base64EncodedAuth);;
+        headers.put("Authorization", "Basic " + base64EncodedAuth);
     }
 
     @Override
@@ -74,7 +74,7 @@ public class CouchDbClientImpl implements CouchDbClient {
             final URL url = new URL(databaseUrl+uri);
             return httpClient.get(url, handler, headers);
         } catch (MalformedURLException e) {
-            throw new IllegalArgumentException(String.format("Bad URL: %s%s" ,databaseUrl, uri), e);
+            throw new IllegalArgumentException(String.format("Bad URL: %s%s", databaseUrl, uri), e);
         }
     }
 
@@ -93,37 +93,44 @@ public class CouchDbClientImpl implements CouchDbClient {
     
     @Override
     public DocumentStatus putDocument(String id, Object document) {
-        try {
-            return httpClient.put(new URL(databaseUrl+id), new DocumentStatusHandler(), encode(document), headers);
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException(String.format("Bad URL: %s%s" ,databaseUrl, id), e);
-        }
+        return putDocument(id, encode(document));
     }
 
     @Override
-    public DocumentStatus postDocument(String id, Object document) {
-        try {
-            return httpClient.post(new URL(databaseUrl+id), new DocumentStatusHandler(), encode(document), headers);
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException(String.format("Bad URL: %s%s" ,databaseUrl, id), e);
-        }
+    public DocumentStatus postDocument(Object document) {
+        return postDocument(encode(document));
     }
 
     @Override
     public DocumentStatus putDocument(String id, String document) {
         try {
+            final Map<String, String> headers = new HashMap<String, String>();
+            headers.putAll(this.headers);
+            headers.put("content-type", "application/json");
             return httpClient.put(new URL(databaseUrl+id), new DocumentStatusHandler(), document, headers);
         } catch (MalformedURLException e) {
-            throw new IllegalArgumentException(String.format("Bad URL: %s%s" ,databaseUrl, id), e);
+            throw new IllegalArgumentException(String.format("Bad URL: %s%s", databaseUrl, id), e);
         }
     }
 
     @Override
-    public DocumentStatus postDocument(String id, String document) {
+    public DocumentStatus postDocument(String document) {
         try {
-            return httpClient.post(new URL(databaseUrl+id), new DocumentStatusHandler(), document, headers);
+            final Map<String, String> headers = new HashMap<String, String>();
+            headers.putAll(this.headers);
+            headers.put("content-type", "application/json");
+            return httpClient.post(new URL(databaseUrl), new DocumentStatusHandler(), document, headers);
         } catch (MalformedURLException e) {
-            throw new IllegalArgumentException(String.format("Bad URL: %s%s" ,databaseUrl, id), e);
+            throw new IllegalArgumentException(String.format("Bad URL: %s", databaseUrl), e);
+        }
+    }
+
+    @Override
+    public DocumentStatus deleteDocument(String id) {
+        try {
+            return httpClient.delete(new URL(databaseUrl+id), new DocumentStatusHandler(), headers);
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException(String.format("Bad URL: %s%s", databaseUrl, id), e);
         }
     }
 
@@ -141,17 +148,16 @@ public class CouchDbClientImpl implements CouchDbClient {
         }
 
         @Override
-        public String handleInput(int responseCode, HttpURLConnection connection) {
+        public String handleInput(int responseCode, InputStream input, HttpURLConnection connection) {
             if (responseCode >= 400) {
                 return null;
             }
             OutputStream out = null;
             try {
                 out = new FileOutputStream(file);
-                InputStream in = connection.getInputStream();
                 byte buffer[] = new byte[4092];
                 int read;
-                while ((read = in.read(buffer)) > 0) {
+                while ((read = input.read(buffer)) > 0) {
                     out.write(buffer, 0, read);
                 }
                 return file.getAbsolutePath();
@@ -178,12 +184,18 @@ public class CouchDbClientImpl implements CouchDbClient {
         }
 
         @Override
-        public T handleInput(int responseCode, HttpURLConnection connection) {
+        public T handleInput(int responseCode, InputStream input, HttpURLConnection connection) {
             try {
                 if (responseCode >= 400) {
-                    throw new DocumentException(String.format("ResponseCode: %d", responseCode));
+                    if (responseCode == 404) {
+                        return null;
+                    }
+                    throw new DocumentException(String.format("ResponseCode: %d. Error: %s", responseCode,
+                                                              objectMapper.readValue(input, DocumentStatus.class)));
                 }
-                return objectMapper.readValue(connection.getInputStream(), type);
+                return objectMapper.readValue(input, type);
+            } catch (DocumentException e) {
+                throw e;
             } catch (Exception e) {
                 throw new IllegalArgumentException(String.format("While parsing a %s", type), e);
             }
@@ -192,9 +204,9 @@ public class CouchDbClientImpl implements CouchDbClient {
     
     private final class DocumentStatusHandler implements HttpResponseHandler<DocumentStatus> {
         @Override
-        public DocumentStatus handleInput(int responseCode, HttpURLConnection connection) {
+        public DocumentStatus handleInput(int responseCode, InputStream input, HttpURLConnection connection) {
             try {
-                return objectMapper.readValue(connection.getInputStream(), DocumentStatus.class);
+                return objectMapper.readValue(input, DocumentStatus.class);
             } catch (Exception e) {
                 throw new IllegalArgumentException(String.format("While parsing document status"), e);
             }
@@ -213,9 +225,9 @@ public class CouchDbClientImpl implements CouchDbClient {
     private final class GenericMapHandler implements HttpResponseHandler<Map<String, Object>> {
         private final TypeReference<Map<String, Object>> mapType = new TypeReference<Map<String,Object>>() {};
         @Override
-        public Map<String, Object> handleInput(int responseCode, HttpURLConnection connection) {
+        public Map<String, Object> handleInput(int responseCode, InputStream input, HttpURLConnection connection) {
             try {
-                return objectMapper.readValue(connection.getInputStream(), mapType);
+                return objectMapper.readValue(input, mapType);
             } catch (FileNotFoundException e) {
                 return null;
             } catch (Exception e) {
@@ -227,9 +239,9 @@ public class CouchDbClientImpl implements CouchDbClient {
     private final class GenericDocumentHandler implements HttpResponseHandler<Document>{
 
         @Override
-        public Document handleInput(int responseCode, HttpURLConnection connection) {
+        public Document handleInput(int responseCode, InputStream input, HttpURLConnection connection) {
             try {
-                return objectMapper.readValue(connection.getInputStream(), Document.class);
+                return objectMapper.readValue(input, Document.class);
             } catch (FileNotFoundException e) {
                 return null;
             } catch (Exception e) {
@@ -246,5 +258,36 @@ public class CouchDbClientImpl implements CouchDbClient {
     @Override
     public HttpResponseHandler<Document> getDocumentHandler() {
         return new GenericDocumentHandler();
+    }
+
+    @Override
+    public CouchDbUser getUser(String name) {
+        final String id = "org.couchdb.user:" + name;
+        return getDocument(id, CouchDbUser.class);
+    }
+
+    @Override
+    public CouchDbUser updateUser(CouchDbUser user) {
+        final DocumentStatus status;
+        if (user.getId() == null) {
+            user.setId("org.couchdb.user:"+user.getName());
+            status = postDocument(user);
+        } else {
+            status = putDocument(user.getId(), user);
+        }
+        if (status.isOk()) {
+            return getDocument(status.getId(), CouchDbUser.class);
+        } else {
+            throw new CouchDbException("Failed to update user: " + user.getName() + ": "+status.getError()+ ", " + status.getReason());
+        }
+    }
+
+    @Override
+    public boolean deleteUser(CouchDbUser user) {
+        if (user==null) {
+            return false;
+        }
+        final DocumentStatus status = deleteDocument(user.getId()+"?rev="+user.getRevision());
+        return status.isOk();
     }
 }

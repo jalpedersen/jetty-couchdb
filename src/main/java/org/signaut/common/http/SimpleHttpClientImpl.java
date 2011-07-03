@@ -59,6 +59,10 @@ public class SimpleHttpClientImpl implements SimpleHttpClient {
         return send("GET", url, handler, null, headers);
     }
 
+    @Override
+    public <T> T delete(URL url, HttpResponseHandler<T> handler, Map<String, String> headers) {
+        return send("DELETE", url, handler, null, headers);
+    }
     
     public <T> T send(String method, URL url, HttpResponseHandler<T> handler, String content, Map<String, String> headers) {
         HttpURLConnection connection = null;
@@ -80,9 +84,9 @@ public class SimpleHttpClientImpl implements SimpleHttpClient {
                 writer.close();
             }
             in = connection.getInputStream();
-            result = handler.handleInput(responseCode(connection), connection);
+            result = handler.handleInput(responseCode(connection), in, connection);
         } catch (IOException e) {
-            result = handler.handleInput(responseCode(connection), connection);
+            result = handler.handleInput(responseCode(connection), connection.getErrorStream(), connection);
         } finally {
             close(writer, out, in);
         }

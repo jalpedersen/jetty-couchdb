@@ -231,9 +231,9 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         final HttpResponseHandler<Void> changeSetHandler = new HttpResponseHandler<Void>(){
 
             @Override
-            public Void handleInput(int responseCode, HttpURLConnection connection) {
+            public Void handleInput(int responseCode, InputStream input, HttpURLConnection connection) {
                 try {
-                    final BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                    final BufferedReader reader = new BufferedReader(new InputStreamReader(input));
                     String change;
                     while ((change = reader.readLine())!=null) {
                         final ChangeSet changeSet = decode(change, ChangeSet.class);

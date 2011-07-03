@@ -27,13 +27,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package org.signaut.common.http;
 
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Map;
 
 public interface SimpleHttpClient {
     public interface HttpResponseHandler<T> {
-        T handleInput(int responseCode, HttpURLConnection connection);
+        T handleInput(int responseCode, InputStream input, HttpURLConnection connection);
     }
 
     <T> T post(URL url, HttpResponseHandler<T> handler, String content, Map<String, String> headers);
@@ -41,4 +42,6 @@ public interface SimpleHttpClient {
     <T> T put(URL url, HttpResponseHandler<T> handler, String content, Map<String, String> headers);
 
     <T> T get(URL url, HttpResponseHandler<T> handler, Map<String, String> headers);
+
+    <T> T delete(URL url, HttpResponseHandler<T> handler, Map<String, String> headers);
 }

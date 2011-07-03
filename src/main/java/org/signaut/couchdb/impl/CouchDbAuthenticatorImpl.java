@@ -27,6 +27,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package org.signaut.couchdb.impl;
 
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -114,7 +115,7 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
     private final class AuthHandler implements HttpResponseHandler<String> {
 
         @Override
-        public String handleInput(int responseCode, HttpURLConnection connection) {
+        public String handleInput(int responseCode, InputStream input, HttpURLConnection connection) {
             if (responseCode < 400) {
                 return decodeAuthToken(connection.getHeaderField("Set-Cookie"));
             }
@@ -125,10 +126,10 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
     private final class UserSessionHandler implements HttpResponseHandler<UserSession> {
 
         @Override
-        public UserSession handleInput(int responseCode, HttpURLConnection connection) {
+        public UserSession handleInput(int responseCode, InputStream input, HttpURLConnection connection) {
             if (responseCode < 400) {
                 try {
-                    return objectMapper.readValue(connection.getInputStream(), UserSession.class);
+                    return objectMapper.readValue(input, UserSession.class);
                 } catch (Exception e) {
                     log.error("Bad user session", e);
                 }

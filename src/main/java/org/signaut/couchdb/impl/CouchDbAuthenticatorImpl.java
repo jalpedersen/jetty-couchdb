@@ -33,6 +33,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -69,6 +70,10 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
     private final int cacheClearDelay = 120;
     private final long cacheSlack = 5*1000;
 
+    public CouchDbAuthenticatorImpl(Properties properties) {
+        this(properties.getProperty("host", "http://localhost:5984")+"/_session");
+    }
+    
     public CouchDbAuthenticatorImpl(String authenticationUrl) {
         try {
             this.authUrl = new URL(authenticationUrl);

@@ -4,3 +4,4 @@
 target
 ~
 logs
+src/test/resources/couchdb.properties

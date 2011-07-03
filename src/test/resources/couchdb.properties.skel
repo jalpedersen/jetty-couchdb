@@ -1,0 +1,3 @@
+host=http://localhost:5984
+user=knownUser
+password=myPassword

@@ -305,8 +305,8 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
                             if (newThreadPool instanceof AbstractLifeCycle) {
                                 ((AbstractLifeCycle) newThreadPool).start();
                             }
-                            ac.setThreadPool(newThreadPool);
                             final ThreadPool oldThreadPool = ac.getThreadPool();
+                            ac.setThreadPool(newThreadPool);
                             if (oldThreadPool instanceof AbstractLifeCycle) {
                                 //Do not stop server's thread pool - nor the new one 
                                 //if the provider gave us the same pool again.

@@ -224,9 +224,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
             }
         }
     }
-    
-   
-    
+
     private final class ChangeListener extends Thread {
         final HttpResponseHandler<Void> changeSetHandler = new HttpResponseHandler<Void>(){
 
@@ -263,6 +261,11 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
                             //log.debug(deploymentManager.getServer().dump());
                         }
                         lastSequence = changeSet.getSequence();
+                        if (couchDeployerProperties.isCompacting()) {
+                            //Compact database to avoid wasting too much space
+                            log.info("Compacting database");
+                            couchDbClient.compactDatabase();
+                        }
                     }
                 } catch (IOException e) {
                     //Ignore

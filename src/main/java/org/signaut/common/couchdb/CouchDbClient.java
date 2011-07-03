@@ -63,6 +63,8 @@ public interface CouchDbClient {
 
     DocumentStatus createDatabase();
 
+    DocumentStatus compactDatabase();
+
     HttpResponseHandler<Map<String, Object>> getGenericMapHandler();
 
     HttpResponseHandler<Document> getDocumentHandler();

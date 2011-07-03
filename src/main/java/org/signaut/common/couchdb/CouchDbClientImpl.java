@@ -34,8 +34,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -66,16 +64,12 @@ public class CouchDbClientImpl implements CouchDbClient {
         final String authString = username + ":" + password;
         final String base64EncodedAuth = Base64Variants.getDefaultVariant().encode(authString.getBytes());
         headers.put("Authorization", "Basic " + base64EncodedAuth);
+        headers.put("content-type", "application/json");
     }
 
     @Override
     public <T> T get(String uri, HttpResponseHandler<T> handler) {
-        try {
-            final URL url = new URL(databaseUrl+uri);
-            return httpClient.get(url, handler, headers);
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException(String.format("Bad URL: %s%s", databaseUrl, uri), e);
-        }
+        return httpClient.get(databaseUrl+uri, handler, headers);
     }
 
     @Override
@@ -103,40 +97,27 @@ public class CouchDbClientImpl implements CouchDbClient {
 
     @Override
     public DocumentStatus putDocument(String id, String document) {
-        try {
-            final Map<String, String> headers = new HashMap<String, String>();
-            headers.putAll(this.headers);
-            headers.put("content-type", "application/json");
-            return httpClient.put(new URL(databaseUrl+id), new DocumentStatusHandler(), document, headers);
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException(String.format("Bad URL: %s%s", databaseUrl, id), e);
-        }
+        return httpClient.put(databaseUrl+id, new DocumentStatusHandler(), document, headers);
     }
 
     @Override
     public DocumentStatus postDocument(String document) {
-        try {
-            final Map<String, String> headers = new HashMap<String, String>();
-            headers.putAll(this.headers);
-            headers.put("content-type", "application/json");
-            return httpClient.post(new URL(databaseUrl), new DocumentStatusHandler(), document, headers);
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException(String.format("Bad URL: %s", databaseUrl), e);
-        }
+        return httpClient.post(databaseUrl, new DocumentStatusHandler(), document, headers);
     }
 
     @Override
     public DocumentStatus deleteDocument(String id) {
-        try {
-            return httpClient.delete(new URL(databaseUrl+id), new DocumentStatusHandler(), headers);
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException(String.format("Bad URL: %s%s", databaseUrl, id), e);
-        }
+        return httpClient.delete(databaseUrl+id, new DocumentStatusHandler(), headers);
     }
 
     @Override
     public DocumentStatus createDatabase() {
         return putDocument("", null);
+    }
+
+    @Override
+    public DocumentStatus compactDatabase() {
+        return httpClient.post(databaseUrl+"/_compact", new DocumentStatusHandler(), null, headers);
     }
     
     private final class FileHandler implements HttpResponseHandler<String> {
@@ -216,7 +197,7 @@ public class CouchDbClientImpl implements CouchDbClient {
 
     private String encode(Object document) {
         try {
-            return objectMapper.writeValueAsString(document);
+            return document==null?null:objectMapper.writeValueAsString(document);
         } catch (Exception e) {
             throw new IllegalArgumentException(String.format("While encoding a %s", document), e);
         }

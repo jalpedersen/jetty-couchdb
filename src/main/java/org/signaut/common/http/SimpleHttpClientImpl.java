@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -44,6 +45,41 @@ public class SimpleHttpClientImpl implements SimpleHttpClient {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
     
+    @Override
+    public <T> T post(String url, HttpResponseHandler<T> handler, String content, Map<String, String> headers) {
+        try {
+            return post(new URL(url), handler, content, headers);
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException("Bad URL: " + url, e);
+        }
+    }
+
+    @Override
+    public <T> T put(String url, HttpResponseHandler<T> handler, String content, Map<String, String> headers) {
+        try {
+            return put(new URL(url), handler, content, headers);
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException("Bad URL: " + url, e);
+        }
+    }
+
+    @Override
+    public <T> T get(String url, HttpResponseHandler<T> handler, Map<String, String> headers) {
+        try {
+            return get(new URL(url), handler, headers);
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException("Bad URL: " + url, e);
+        }
+    }
+
+    @Override
+    public <T> T delete(String url, HttpResponseHandler<T> handler, Map<String, String> headers) {
+        try {
+            return delete(new URL(url), handler, headers);
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException("Bad URL: " + url, e);
+        }
+    }
     @Override
     public <T> T post(URL url, HttpResponseHandler<T> handler, String content, Map<String, String> headers) {
         return send("POST", url, handler, content, headers);
@@ -63,7 +99,7 @@ public class SimpleHttpClientImpl implements SimpleHttpClient {
     public <T> T delete(URL url, HttpResponseHandler<T> handler, Map<String, String> headers) {
         return send("DELETE", url, handler, null, headers);
     }
-    
+
     public <T> T send(String method, URL url, HttpResponseHandler<T> handler, String content, Map<String, String> headers) {
         HttpURLConnection connection = null;
         OutputStream out = null;

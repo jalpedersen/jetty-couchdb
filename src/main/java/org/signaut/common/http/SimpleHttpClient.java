@@ -37,6 +37,14 @@ public interface SimpleHttpClient {
         T handleInput(int responseCode, InputStream input, HttpURLConnection connection);
     }
 
+    <T> T post(String url, HttpResponseHandler<T> handler, String content, Map<String, String> headers);
+
+    <T> T put(String url, HttpResponseHandler<T> handler, String content, Map<String, String> headers);
+
+    <T> T get(String url, HttpResponseHandler<T> handler, Map<String, String> headers);
+
+    <T> T delete(String url, HttpResponseHandler<T> handler, Map<String, String> headers);
+
     <T> T post(URL url, HttpResponseHandler<T> handler, String content, Map<String, String> headers);
     
     <T> T put(URL url, HttpResponseHandler<T> handler, String content, Map<String, String> headers);
@@ -44,4 +52,5 @@ public interface SimpleHttpClient {
     <T> T get(URL url, HttpResponseHandler<T> handler, Map<String, String> headers);
 
     <T> T delete(URL url, HttpResponseHandler<T> handler, Map<String, String> headers);
+
 }

@@ -206,12 +206,14 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     }
     
     private void verifyDesignDocument() {
+        log.info("Validating design document " + couchDeployerProperties.getDesignDocument());
         final String designDocumentId = "_design/"+couchDeployerProperties.getDesignDocument();
         final Map<String, Object> dbInfo = couchDbClient.get("", couchDbClient.getGenericMapHandler());
         if (dbInfo == null) {
             DocumentStatus dbCreation = couchDbClient.createDatabase();
             log.info("Created database: " + couchDeployerProperties.getDatabaseUrl() + ": " + dbCreation);
         }
+        log.info("Database ok");
         final Document existing = couchDbClient.get(designDocumentId, couchDbClient.getDocumentHandler());
         if (existing == null) {
             log.info("No design document found - creating");
@@ -223,6 +225,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
                 log.warn("Could not find " + designDocumentTemplate);
             }
         }
+        log.info("Design document ok");
     }
 
     private final class ChangeListener extends Thread {
@@ -277,14 +280,18 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         public void run() {
             while (isRunning()) {
                 try {
-                    log.info(String.format("CouchDB sequence: %s", lastSequence));
                     final long beforeRequest = System.currentTimeMillis();
-                    couchDbClient.get("/_changes?feed=continuous" +
-                                      //Heartbeat is in milliseconds
-                                      "&heartbeat=" + couchDeployerProperties.getHeartbeat()*1000 +
-                                      "&filter=" + couchDeployerProperties.getFilter() +
-                                      (lastSequence==null?"":"&since=" + lastSequence), 
-                                      changeSetHandler);
+                    try {
+                        log.info(String.format("CouchDB sequence: %s", lastSequence));
+                        couchDbClient.get("/_changes?feed=continuous" +
+                                //Heartbeat is in milliseconds
+                                "&heartbeat=" + couchDeployerProperties.getHeartbeat()*1000 +
+                                "&filter=" + couchDeployerProperties.getFilter() +
+                                (lastSequence==null?"":"&since=" + lastSequence),
+                                changeSetHandler);
+                    } catch (Throwable t) {
+                        log.error("While listening for changes", t);
+                    }
                     final long sinceLastRequest = System.currentTimeMillis() - beforeRequest;
                     //Back off if CouchDB is not available at the moment.
                     if (sinceLastRequest < changeSetGracePeriod) {

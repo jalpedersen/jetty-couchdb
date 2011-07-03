@@ -38,6 +38,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.codehaus.jackson.Base64Variants;
+import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 import org.signaut.common.http.SimpleHttpClient;
@@ -167,14 +169,12 @@ public class CouchDbClientImpl implements CouchDbClient {
         @Override
         public T handleInput(int responseCode, InputStream input, HttpURLConnection connection) {
             try {
-                if (responseCode >= 400) {
-                    if (responseCode == 404) {
-                        return null;
-                    }
-                    throw new DocumentException(String.format("ResponseCode: %d. Error: %s", responseCode,
-                                                              objectMapper.readValue(input, DocumentStatus.class)));
+                if (documentExist(responseCode, input)) {
+                    return objectMapper.readValue(input, type);
+                } else {
+                    return null;
                 }
-                return objectMapper.readValue(input, type);
+
             } catch (DocumentException e) {
                 throw e;
             } catch (Exception e) {
@@ -203,12 +203,27 @@ public class CouchDbClientImpl implements CouchDbClient {
         }
     }
 
+    private boolean documentExist(int responseCode, InputStream input) throws JsonParseException, JsonMappingException, IOException {
+        if (responseCode >= 400) {
+            if (responseCode == 404) {
+                return false;
+            }
+            throw new DocumentException(String.format("ResponseCode: %d. Error: %s", responseCode,
+                                                      objectMapper.readValue(input, DocumentStatus.class)));
+        }
+        return true;
+    }
+
     private final class GenericMapHandler implements HttpResponseHandler<Map<String, Object>> {
         private final TypeReference<Map<String, Object>> mapType = new TypeReference<Map<String,Object>>() {};
         @Override
         public Map<String, Object> handleInput(int responseCode, InputStream input, HttpURLConnection connection) {
             try {
-                return objectMapper.readValue(input, mapType);
+                if (documentExist(responseCode, input)){
+                    return objectMapper.readValue(input, mapType);
+                } else {
+                    return null;
+                }
             } catch (FileNotFoundException e) {
                 return null;
             } catch (Exception e) {
@@ -222,7 +237,11 @@ public class CouchDbClientImpl implements CouchDbClient {
         @Override
         public Document handleInput(int responseCode, InputStream input, HttpURLConnection connection) {
             try {
-                return objectMapper.readValue(input, Document.class);
+                if (documentExist(responseCode, input)) {
+                    return objectMapper.readValue(input, Document.class);
+                } else {
+                    return null;
+                }
             } catch (FileNotFoundException e) {
                 return null;
             } catch (Exception e) {

@@ -35,11 +35,10 @@ public class CouchDbDeployerProperties {
     private String filter;
     private String designDocument;
     private int heartbeat = 5;
-    private boolean compacting;
+    private int compactInterval = 4;
     private String temporaryDirectory = System.getProperty("java.io.tmpdir");
 
     public CouchDbDeployerProperties() {
-        compacting = true;
     }
 
     public CouchDbDeployerProperties(String databaseUrl, String username, String password, String designDocument, String filter, int heartbeat) {
@@ -114,11 +113,11 @@ public class CouchDbDeployerProperties {
         return this;
     }
 
-    public boolean isCompacting() {
-        return compacting;
+    public int getCompactInterval() {
+        return compactInterval;
     }
 
-    public void setCompacting(boolean compacting) {
-        this.compacting = compacting;
+    public void setCompactInterval(int compactInterval) {
+        this.compactInterval = compactInterval;
     }
 }

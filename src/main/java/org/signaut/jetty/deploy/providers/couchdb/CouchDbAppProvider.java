@@ -229,8 +229,9 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     }
 
     private final class ChangeListener extends Thread {
-        final HttpResponseHandler<Void> changeSetHandler = new HttpResponseHandler<Void>(){
+        private int redeployCounter = 0;
 
+        final HttpResponseHandler<Void> changeSetHandler = new HttpResponseHandler<Void>(){
             @Override
             public Void handleInput(int responseCode, InputStream input, HttpURLConnection connection) {
                 try {
@@ -264,10 +265,14 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
                             //log.debug(deploymentManager.getServer().dump());
                         }
                         lastSequence = changeSet.getSequence();
-                        if (couchDeployerProperties.isCompacting()) {
-                            //Compact database to avoid wasting too much space
-                            log.info("Compacting database");
-                            couchDbClient.compactDatabase();
+                        if (couchDeployerProperties.getCompactInterval() > 0) {
+                            redeployCounter++;
+                            if (redeployCounter >= couchDeployerProperties.getCompactInterval()) {
+                                //Compact database to avoid wasting too much space
+                                log.info("Compacting database");
+                                couchDbClient.compactDatabase();
+                                redeployCounter = 0;
+                            }
                         }
                     }
                 } catch (IOException e) {

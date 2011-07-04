@@ -33,6 +33,7 @@ public class UserContext {
     private String name;
     private String roles[];
     private long creationTimestamp;
+    private String authToken;
 
     public UserContext() {
         creationTimestamp = System.currentTimeMillis();
@@ -64,9 +65,16 @@ public class UserContext {
         return creationTimestamp;
     }
 
+    public String getAuthToken() {
+        return authToken;
+    }
+
+    public void setAuthToken(String authToken) {
+        this.authToken = authToken;
+    }
+
     @Override
     public String toString() {
         return "UserContext [name=" + name + ", roles=" + Arrays.toString(roles) + "]";
     }
-
 }

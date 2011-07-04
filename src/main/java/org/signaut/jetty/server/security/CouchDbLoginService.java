@@ -100,6 +100,11 @@ public class CouchDbLoginService extends AbstractLifeCycle implements LoginServi
             if (sessionId != null) {
                 final UserContext session = couchDbAuthenticator.validate(sessionId);
                 if (session != null) {
+                    //Update session token in case it has changed
+                    final String newToken = session.getAuthToken();
+                    if (newToken != null && ! sessionId.equals(newToken)) {
+                        activeUsers.put(username, newToken);
+                    }
                     return true;
                 }
             }

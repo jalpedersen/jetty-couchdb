@@ -129,7 +129,12 @@ public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
         public UserSession handleInput(int responseCode, InputStream input, HttpURLConnection connection) {
             if (responseCode < 400) {
                 try {
-                    return objectMapper.readValue(input, UserSession.class);
+                    final UserSession session = objectMapper.readValue(input, UserSession.class);
+                    final String token = decodeAuthToken(connection.getHeaderField("Set-Cookie"));
+                    if (token != null && session != null && session.getUserContext() != null) {
+                      session.getUserContext().setAuthToken(token);
+                    }
+                    return session;
                 } catch (Exception e) {
                     log.error("Bad user session", e);
                 }

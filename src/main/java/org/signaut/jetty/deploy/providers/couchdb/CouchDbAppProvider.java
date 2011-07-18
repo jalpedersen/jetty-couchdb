@@ -385,6 +385,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     private ContextHandler createContext(WebAppDocument desc) {
         log.info("Creating new context for {}", desc);
         final WebAppContext context = new WebAppContext(desc.getName(), desc.getContextPath());
+        context.setVirtualHosts(desc.getVirtualHosts());
         context.setServerClasses(concat(context.getServerClasses(), serverClasses));
         context.setSystemClasses(concat(context.getSystemClasses(), systemClasses));
 

@@ -32,6 +32,7 @@ import org.signaut.common.couchdb.Document;
 public class WebAppDocument extends Document {
     private String name;
     private String contextPath;
+    private String virtualHosts[];
     private String war;
     private boolean showingFullStacktrace;
 
@@ -49,6 +50,18 @@ public class WebAppDocument extends Document {
 
     public void setContextPath(String contextPath) {
         this.contextPath = contextPath;
+    }
+
+    public String[] getVirtualHosts() {
+        return virtualHosts;
+    }
+
+    public void setVirtualHosts(String virtualHosts[]) {
+        this.virtualHosts = virtualHosts;
+    }
+
+    public void setVirtualHost(String virtualHost) {
+        this.virtualHosts = new String[]{virtualHost};
     }
 
     public String getWar() {

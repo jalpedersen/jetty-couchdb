@@ -122,7 +122,8 @@ public class SimpleHttpClientImpl implements SimpleHttpClient {
             in = connection.getInputStream();
             result = handler.handleInput(responseCode(connection), in, connection);
         } catch (IOException e) {
-            result = handler.handleInput(responseCode(connection), connection.getErrorStream(), connection);
+            in = connection.getErrorStream();
+            result = handler.handleInput(responseCode(connection), in, connection);
         } finally {
             close(writer, out, in);
         }

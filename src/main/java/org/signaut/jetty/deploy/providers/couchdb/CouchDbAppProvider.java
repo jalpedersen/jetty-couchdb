@@ -37,6 +37,11 @@ import java.net.HttpURLConnection;
 import java.util.Map;
 import java.util.Scanner;
 
+import javax.management.RuntimeErrorException;
+
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.JsonProcessingException;
+import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.eclipse.jetty.deploy.App;
 import org.eclipse.jetty.deploy.AppProvider;
@@ -101,7 +106,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
      * apps would be redeployed, and we don't want that.
      * This is a string in order to support BigCouch
      */
-    private String lastSequence = null;
+    private Object lastSequence = null;
     
     private Thread changeListenerThread;
     private String serverClasses[] = { "com.google.inject.", "org.slf4j.", "ch.qos.logback", "org.apache.log4j.", "org.signaut." };
@@ -240,9 +245,13 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
                     while ((change = reader.readLine())!=null) {
                         final ChangeSet changeSet = decode(change, ChangeSet.class);
                         if (changeSet == null || changeSet.getSequence() == null) {
-                            if (changeSet != null && changeSet.getLastSequence() == null) {
+                            if (changeSet != null && changeSet.getSequence() == null) {
                                 throw new IllegalStateException(String.format("bad change: %s", change));
                             }
+                            continue;
+                        }
+                        if (changeSet.getId() == null) {
+                            log.warn("Could not find document id in " + change);
                             continue;
                         }
                         if ( ! changeSet.isDeleted()) {
@@ -292,7 +301,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
                                 //Heartbeat is in milliseconds
                                 "&heartbeat=" + couchDeployerProperties.getHeartbeat()*1000 +
                                 "&filter=" + couchDeployerProperties.getFilter() +
-                                (lastSequence==null?"":"&since=" + lastSequence),
+                                (lastSequence==null?"":"&since=" + encodeSequence(lastSequence)),
                                 changeSetHandler);
                     } catch (Throwable t) {
                         log.error("While listening for changes", t);
@@ -306,6 +315,21 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
                     log.error("While listening for changes", t);
                 }
             }
+        }
+    }
+    private String encodeSequence(Object seq) {
+        if (seq == null) {
+            return null;
+        }
+        if (seq instanceof String || seq instanceof Number) {
+            return seq.toString();
+        }
+        try {
+            return objectMapper.writeValueAsString(seq);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("while encoding sequence " + seq, e);
+        } catch (IOException e) {
+            throw new RuntimeException("while encoding sequence " + seq, e);
         }
     }
     

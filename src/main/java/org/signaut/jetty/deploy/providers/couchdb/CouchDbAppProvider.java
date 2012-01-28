@@ -37,16 +37,14 @@ import java.net.HttpURLConnection;
 import java.util.Map;
 import java.util.Scanner;
 
-import javax.management.RuntimeErrorException;
 
-import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.eclipse.jetty.deploy.App;
 import org.eclipse.jetty.deploy.AppProvider;
 import org.eclipse.jetty.deploy.DeploymentManager;
 import org.eclipse.jetty.security.Authenticator;
+import org.eclipse.jetty.security.LoginService;
 import org.eclipse.jetty.security.Authenticator.Factory;
 import org.eclipse.jetty.server.AbstractConnector;
 import org.eclipse.jetty.server.Connector;
@@ -91,6 +89,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     private DeploymentManager deploymentManager;
     private CouchDbDeployerProperties couchDeployerProperties;
     private Authenticator.Factory authenticatorFactory;
+    private LoginService loginService;
     private SessionManagerProvider sessionManagerProvider;
     private ThreadPoolProvider threadPoolProvider;
     private CouchDbClient couchDbClient;
@@ -140,6 +139,15 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
 
     public CouchDbAppProvider setAuthenticatorFactory(Authenticator.Factory authenticatorFactory) {
         this.authenticatorFactory = authenticatorFactory;
+        return this;
+    }
+
+    public LoginService getLoginService() {
+        return loginService;
+    }
+
+    public CouchDbAppProvider setLoginService(LoginService loginService) {
+        this.loginService = loginService;
         return this;
     }
 
@@ -417,6 +425,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         final ErrorHandler errorHandler = new JsonErrorHandler();
         errorHandler.setShowStacks(desc.isShowingFullStacktrace());
         context.setErrorHandler(errorHandler);
+        context.getSecurityHandler().setLoginService(loginService);
         context.getSecurityHandler().setAuthenticatorFactory(authenticatorFactory);
         context.setSessionHandler(new SessionHandler(sessionManagerProvider.get()));
         context.setParentLoaderPriority(false);

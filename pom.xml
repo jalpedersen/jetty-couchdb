@@ -3,10 +3,10 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.signaut</groupId>
   <artifactId>jetty-couchdb</artifactId>
-  <version>1.2.0</version>
-  <name>Use CouchDB for deployment and user realm</name>
+  <version>1.2.1</version>
+  <name>Jetty CouchDB app. provider and user realm </name>
   <properties>
-    <jetty.version>7.6.0.v20120127</jetty.version>
+    <jetty.version>7.6.1.v20120215</jetty.version>
   </properties>
   <dependencies>
     <dependency>

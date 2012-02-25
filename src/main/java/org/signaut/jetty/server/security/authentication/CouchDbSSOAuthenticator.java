@@ -40,6 +40,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.http.HttpHeaders;
 import org.eclipse.jetty.security.ServerAuthException;
 import org.eclipse.jetty.security.UserAuthentication;
+import org.eclipse.jetty.security.authentication.DeferredAuthentication;
 import org.eclipse.jetty.security.authentication.LoginAuthenticator;
 import org.eclipse.jetty.server.Authentication;
 import org.eclipse.jetty.server.Authentication.User;
@@ -68,11 +69,14 @@ public class CouchDbSSOAuthenticator extends LoginAuthenticator {
             throws ServerAuthException {
         final HttpServletRequest httpRequest = (HttpServletRequest) request;
         final HttpServletResponse httpResponse = (HttpServletResponse) response;
-        final String sessionId;
+        String sessionId = null;
         final String cookie = httpRequest.getHeader(HttpHeaders.COOKIE);
         if (cookie != null) {
+            //First try to find a AuthSession
             sessionId = couchDbAuthenticator.decodeAuthToken(cookie);
-        } else {
+        }
+        if (sessionId == null) {
+            //If all else fails, use basic auth
             sessionId = basicAuth(httpRequest);
         }
 
@@ -88,7 +92,7 @@ public class CouchDbSSOAuthenticator extends LoginAuthenticator {
                     return new UserAuthentication(getAuthMethod(), user);
                 }
             }
-            if (_deferred.isDeferred(httpResponse)) {
+            if (DeferredAuthentication.isDeferred(httpResponse)) {
                 return Authentication.UNAUTHENTICATED;
             }
             httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN);

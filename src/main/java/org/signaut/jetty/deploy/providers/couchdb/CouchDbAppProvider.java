@@ -37,15 +37,12 @@ import java.net.HttpURLConnection;
 import java.util.Map;
 import java.util.Scanner;
 
-
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.eclipse.jetty.deploy.App;
 import org.eclipse.jetty.deploy.AppProvider;
 import org.eclipse.jetty.deploy.DeploymentManager;
 import org.eclipse.jetty.security.Authenticator;
-import org.eclipse.jetty.security.LoginService;
 import org.eclipse.jetty.security.Authenticator.Factory;
+import org.eclipse.jetty.security.LoginService;
 import org.eclipse.jetty.server.AbstractConnector;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
@@ -55,7 +52,6 @@ import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
-import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.thread.ThreadPool;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.signaut.common.couchdb.ChangeSet;
@@ -66,6 +62,9 @@ import org.signaut.common.couchdb.DocumentStatus;
 import org.signaut.common.http.SimpleHttpClient.HttpResponseHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider {
 

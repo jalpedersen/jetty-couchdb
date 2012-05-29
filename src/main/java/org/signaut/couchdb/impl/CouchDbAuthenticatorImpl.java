@@ -42,9 +42,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.signaut.common.http.SimpleHttpClient;
 import org.signaut.common.http.SimpleHttpClient.HttpResponseHandler;
 import org.signaut.common.http.SimpleHttpClientImpl;
@@ -52,6 +49,10 @@ import org.signaut.couchdb.CouchDbAuthenticator;
 import org.signaut.couchdb.UserContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class CouchDbAuthenticatorImpl implements CouchDbAuthenticator {
 

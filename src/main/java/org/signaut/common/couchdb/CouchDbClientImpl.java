@@ -37,16 +37,17 @@ import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.codehaus.jackson.Base64Variants;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
 import org.signaut.common.http.SimpleHttpClient;
 import org.signaut.common.http.SimpleHttpClient.HttpResponseHandler;
 import org.signaut.common.http.SimpleHttpClientImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.core.Base64Variants;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class CouchDbClientImpl implements CouchDbClient {
 
@@ -63,10 +64,12 @@ public class CouchDbClientImpl implements CouchDbClient {
         } else {
             this.databaseUrl = databaseUrl+"/";
         }
-        final String authString = username + ":" + password;
-        final String base64EncodedAuth = Base64Variants.getDefaultVariant().encode(authString.getBytes());
-        headers.put("Authorization", "Basic " + base64EncodedAuth);
-        headers.put("content-type", "application/json");
+        if (username != null) {
+            final String authString = username + ":" + password;
+            final String base64EncodedAuth = Base64Variants.getDefaultVariant().encode(authString.getBytes());
+            headers.put("Authorization", "Basic " + base64EncodedAuth);
+            headers.put("content-type", "application/json");
+        }
     }
 
     @Override

@@ -21,14 +21,14 @@ database. Basically you provide it an URL to a CouchDB database and a
 filter function and all matching documents with an attached war-file
 and a context path will be deployed. Note that this is a very simple
 way of deploying the same webapp to multiple jetty instances. (See
-[jetty-cluster](http://github.com/jalpedersen/jetty-cluster) if you
+[jetty-hazelcast](http://github.com/jalpedersen/jetty-hazelcast) if you
 need clustering of web-session data as well). Note that apps are
 redeployed on document changes automatically, thanks to the excellent
 change notification API in CouchDB.
 
 One of the nice features of this AppProvider is that is supports
 replacement of the underlying connector's thread-pool. While this in
-itself does not sound existing, the consequence of this is that most
+itself does not sound exciting, the consequence of this is that most
 cases of perm-gen leaks are eliminated by this feature. This is
 because most perm-gen leaks are caused by frameworks putting all sorts
 of things in thread-local variables without cleaning up after

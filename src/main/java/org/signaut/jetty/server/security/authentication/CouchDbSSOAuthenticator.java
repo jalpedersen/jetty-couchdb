@@ -52,7 +52,7 @@ import org.signaut.couchdb.UserContext;
 import org.signaut.jetty.server.security.SerializablePrincipal;
 
 public class CouchDbSSOAuthenticator extends LoginAuthenticator {
-
+    private final DeferredAuthentication _deferred=new DeferredAuthentication(this);
     private final CouchDbAuthenticator couchDbAuthenticator;
 
     public CouchDbSSOAuthenticator(CouchDbAuthenticator couchDbAuthenticator) {

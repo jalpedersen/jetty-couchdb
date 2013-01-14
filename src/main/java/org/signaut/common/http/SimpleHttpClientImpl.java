@@ -122,8 +122,13 @@ public class SimpleHttpClientImpl implements SimpleHttpClient {
             in = connection.getInputStream();
             result = handler.handleInput(responseCode(connection), in, connection);
         } catch (IOException e) {
+            int responseCode = responseCode(connection);
+            if (responseCode < 0) {
+                //Bail out if we're not getting anything useful out of the reponse
+                throw new RuntimeException(String.format("error %s'ing to %s", method, url), e);
+            }
             in = connection.getErrorStream();
-            result = handler.handleInput(responseCode(connection), in, connection);
+            result = handler.handleInput(responseCode, in, connection);
         } finally {
             close(writer, out, in);
         }

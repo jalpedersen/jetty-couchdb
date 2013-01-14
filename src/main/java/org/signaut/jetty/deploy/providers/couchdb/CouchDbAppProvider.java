@@ -232,8 +232,14 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
             log.info("No design document found - creating");
             final InputStream designInput = getClass().getResourceAsStream(designDocumentTemplate);
             if (designInput != null) {
-                final String designDocumentContent = new Scanner(designInput, "UTF-8").useDelimiter("\\A").next();
-                log.info("Updating design document: " + couchDbClient.putDocument(designDocumentId, designDocumentContent));
+                Scanner scanner = null;
+                try {
+                    scanner = new Scanner(designInput, "UTF-8");
+                    final String designDocumentContent = scanner.useDelimiter("\\A").next();
+                    log.info("Updating design document: " + couchDbClient.putDocument(designDocumentId, designDocumentContent));
+                } finally {
+                    scanner.close();
+                }
             } else {
                 log.warn("Could not find " + designDocumentTemplate);
             }
@@ -335,8 +341,6 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         try {
             return objectMapper.writeValueAsString(seq);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("while encoding sequence " + seq, e);
-        } catch (IOException e) {
             throw new RuntimeException("while encoding sequence " + seq, e);
         }
     }

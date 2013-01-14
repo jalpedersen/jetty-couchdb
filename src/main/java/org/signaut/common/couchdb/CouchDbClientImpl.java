@@ -207,7 +207,7 @@ public class CouchDbClientImpl implements CouchDbClient {
     }
 
     private boolean documentExist(int responseCode, InputStream input) throws JsonParseException, JsonMappingException, IOException {
-        if (responseCode >= 400) {
+        if (responseCode >= 400 || responseCode < 0) {
             if (responseCode == 404) {
                 return false;
             }

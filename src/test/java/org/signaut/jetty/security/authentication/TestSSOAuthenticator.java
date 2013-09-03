@@ -5,7 +5,7 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.eclipse.jetty.http.HttpHeaders;
+import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.security.Authenticator.AuthConfiguration;
 import org.eclipse.jetty.security.LoginService;
 import org.eclipse.jetty.security.ServerAuthException;
@@ -34,7 +34,7 @@ public class TestSSOAuthenticator {
         when(configuration.getIdentityService()).thenReturn(new SerializableIdentityService());
         when(configuration.getLoginService()).thenReturn(loginService);
         when(configuration.isSessionRenewedOnAuthentication()).thenReturn(false);
-        when(req.getHeader(HttpHeaders.COOKIE)).thenReturn(cookieString);
+        when(req.getHeader(HttpHeader.COOKIE.asString())).thenReturn(cookieString);
         when(couchDbAuthenticator.decodeAuthToken(cookieString)).thenReturn(sessionId);
         when(couchDbAuthenticator.validate(sessionId)).thenReturn(new UserContext("jalp", null));
         

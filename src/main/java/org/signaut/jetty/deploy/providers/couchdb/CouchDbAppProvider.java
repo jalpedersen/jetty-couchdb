@@ -43,7 +43,6 @@ import org.eclipse.jetty.deploy.DeploymentManager;
 import org.eclipse.jetty.security.Authenticator;
 import org.eclipse.jetty.security.Authenticator.Factory;
 import org.eclipse.jetty.security.LoginService;
-import org.eclipse.jetty.server.AbstractConnector;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.SessionManager;
@@ -77,25 +76,17 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         SessionManager get();
     }
 
-    public interface ThreadPoolProvider {
-        /**
-         * Create a new thread pool
-         *
-         * @return
-         */
-        ThreadPool get();
-    }
+  
 
     private DeploymentManager deploymentManager;
     private CouchDbDeployerProperties couchDeployerProperties;
     private Authenticator.Factory authenticatorFactory;
     private LoginService loginService;
     private SessionManagerProvider sessionManagerProvider;
-    private ThreadPoolProvider threadPoolProvider;
     private CouchDbClient couchDbClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private boolean restartingConnectorsRequired = true;
+    private boolean restartingConnectorsRequired = false;
     private long changeSetGracePeriod = 5000;
     private String designDocumentTemplate = "/designdocument/webapps.json";
     
@@ -114,11 +105,10 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     public CouchDbAppProvider(){}
 
     public CouchDbAppProvider(CouchDbDeployerProperties couchDeployerProperties, Factory authenticatorFactory,
-                              SessionManagerProvider sessionManagerProvider, ThreadPoolProvider threadPoolProvider) {
+                              SessionManagerProvider sessionManagerProvider) {
         setCouchDeployerProperties(couchDeployerProperties);
         setAuthenticatorFactory(authenticatorFactory);
         setSessionManagerProvider(sessionManagerProvider);
-        setThreadPoolProvider(threadPoolProvider);
     }
 
     public CouchDbDeployerProperties getCouchDeployerProperties() {
@@ -157,18 +147,6 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
 
     public CouchDbAppProvider setSessionManagerProvider(SessionManagerProvider sessionManagerProvider) {
         this.sessionManagerProvider = sessionManagerProvider;
-        return this;
-    }
-
-    public ThreadPoolProvider getThreadPoolProvider() {
-        return threadPoolProvider;
-    }
-
-    public CouchDbAppProvider setThreadPoolProvider(ThreadPoolProvider threadPoolProvider) {
-        this.threadPoolProvider = threadPoolProvider;
-        if (threadPoolProvider != null) {
-            restartingConnectorsRequired = true;
-        }
         return this;
     }
 
@@ -275,7 +253,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
                                 final App oldApp = deploymentManager.getAppByOriginId(changeSet.getId());
                                 if (oldApp != null) {
                                     log.debug("Undeploying {} at {}", oldApp.getOriginId(), oldApp.getContextPath());
-                                    undeploy(oldApp, restartingConnectorsRequired);
+                                    undeploy(oldApp);
                                 }
                             }
                             deploymentManager.addApp(new App(deploymentManager, CouchDbAppProvider.this, changeSet.getId()));
@@ -345,49 +323,8 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         }
     }
     
-    private void undeploy(App app, boolean restart) {
-        if (restart) {
-            for (Connector c: deploymentManager.getServer().getConnectors()){
-                if (threadPoolProvider != null && c instanceof AbstractConnector) {
-                    final AbstractConnector ac = (AbstractConnector)c;
-                    final ThreadPool newThreadPool = threadPoolProvider.get();
-                    try {
-                        if (newThreadPool != null) {
-                            if (newThreadPool instanceof AbstractLifeCycle) {
-                                ((AbstractLifeCycle) newThreadPool).start();
-                            }
-                            final ThreadPool oldThreadPool = ac.getThreadPool();
-                            ac.setThreadPool(newThreadPool);
-                            if (oldThreadPool instanceof AbstractLifeCycle) {
-                                //Do not stop server's thread pool - nor the new one 
-                                //if the provider gave us the same pool again.
-                                if (c.getServer().getThreadPool() != oldThreadPool &&
-                                        oldThreadPool != newThreadPool) {
-                                    ((AbstractLifeCycle) oldThreadPool).stop();
-                                }
-                            }
-                            log.debug("Replaced threadpool for " + c.getName());
-                        } else { 
-                            log.warn("No new thread pool was provided for " + c.getName());
-                        }
-                    } catch (Exception e) {
-                        log.error(String.format("While replacing threadpool for connector %s", c.getName()), e);
-                    }
-                } else {
-                    try {
-                        c.stop();
-                    } catch (Exception e) {
-                        log.error(String.format("Failed to stop connector %s", c.getName()), e);
-                    }
-                    try {
-                        c.start();
-                        log.info("Connector {} restarted successfully", c.getName());
-                    } catch (Exception e) {
-                        log.error(String.format("Failed to start connector %s", c.getName()), e);
-                    }
-                }
-            }
-        }
+    private void undeploy(App app) {
+
         deploymentManager.removeApp(app);
     }
     
@@ -403,7 +340,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     public ContextHandler createContextHandler(App app) throws Exception {
         final WebAppDocument webapp = couchDbClient.getDocument(app.getOriginId(), WebAppDocument.class);
         if (webapp.getWar() == null) {
-            undeploy(app, false);
+            undeploy(app);
             throw new IllegalArgumentException(String.format("No war file for %s", webapp)); 
         }
 
@@ -411,7 +348,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         //Point war to full path of downloaded file
         final String path = couchDbClient.downloadAttachment(app.getOriginId(), webapp.getWar(), directory);
         if (path == null) {
-            undeploy(app, false);
+            undeploy(app);
             throw new IllegalArgumentException(String.format("War file not found: ", webapp)); 
         }
         webapp.setWar(path);

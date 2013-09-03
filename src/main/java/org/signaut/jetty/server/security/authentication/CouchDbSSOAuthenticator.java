@@ -28,7 +28,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package org.signaut.jetty.server.security.authentication;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.security.Principal;
 
 import javax.security.auth.Subject;
@@ -37,7 +36,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.eclipse.jetty.http.HttpHeaders;
+import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.security.ServerAuthException;
 import org.eclipse.jetty.security.UserAuthentication;
 import org.eclipse.jetty.security.authentication.DeferredAuthentication;
@@ -70,7 +69,7 @@ public class CouchDbSSOAuthenticator extends LoginAuthenticator {
         final HttpServletRequest httpRequest = (HttpServletRequest) request;
         final HttpServletResponse httpResponse = (HttpServletResponse) response;
         String sessionId = null;
-        final String cookie = httpRequest.getHeader(HttpHeaders.COOKIE);
+        final String cookie = httpRequest.getHeader(HttpHeader.COOKIE.asString());
         if (cookie != null) {
             //First try to find a AuthSession
             sessionId = couchDbAuthenticator.decodeAuthToken(cookie);
@@ -117,14 +116,10 @@ public class CouchDbSSOAuthenticator extends LoginAuthenticator {
     }
 
     private String basicAuth(HttpServletRequest httpRequest) {
-        final String auth = httpRequest.getHeader(HttpHeaders.AUTHORIZATION);
+        final String auth = httpRequest.getHeader(HttpHeader.AUTHORIZATION.asString());
         if (auth != null) {
             final String decodedAuth;
-            try {
-                decodedAuth = B64Code.decode(auth.substring(auth.indexOf(' ')+1),StringUtil.__ISO_8859_1);
-            } catch (UnsupportedEncodingException e) {
-                throw new IllegalArgumentException(String.format("Bad authorization: %s",auth),e);
-            }
+            decodedAuth = B64Code.decode(auth.substring(auth.indexOf(' ')+1),StringUtil.__ISO_8859_1);
             final String authTokens[] = decodedAuth.split(":", 2);
             if (authTokens.length > 1) {
 

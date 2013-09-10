@@ -34,8 +34,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 
 import org.eclipse.jetty.deploy.App;
 import org.eclipse.jetty.deploy.AppProvider;
@@ -43,6 +45,7 @@ import org.eclipse.jetty.deploy.DeploymentManager;
 import org.eclipse.jetty.security.Authenticator;
 import org.eclipse.jetty.security.Authenticator.Factory;
 import org.eclipse.jetty.security.LoginService;
+import org.eclipse.jetty.server.AbstractConnector;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.SessionManager;
@@ -51,7 +54,6 @@ import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
-import org.eclipse.jetty.util.thread.ThreadPool;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.signaut.common.couchdb.ChangeSet;
 import org.signaut.common.couchdb.CouchDbClient;
@@ -59,6 +61,7 @@ import org.signaut.common.couchdb.CouchDbClientImpl;
 import org.signaut.common.couchdb.Document;
 import org.signaut.common.couchdb.DocumentStatus;
 import org.signaut.common.http.SimpleHttpClient.HttpResponseHandler;
+import org.signaut.util.thread.ReplaceableThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -324,7 +327,18 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
     }
     
     private void undeploy(App app) {
-
+    	for (Connector c: deploymentManager.getServer().getConnectors()) {
+    		if (c instanceof AbstractConnector) {
+    			final AbstractConnector connector = (AbstractConnector) c;
+    			if (connector.getExecutor() instanceof ReplaceableThreadPool) {
+    				try {
+    					((ReplaceableThreadPool)connector.getExecutor()).replaceThreads();
+    				} catch (Exception e) {
+    					log.error("Error replacing threads", e);
+    				}
+    			}
+    		}
+    	}
         deploymentManager.removeApp(app);
     }
     
@@ -349,7 +363,7 @@ public class CouchDbAppProvider extends AbstractLifeCycle implements AppProvider
         final String path = couchDbClient.downloadAttachment(app.getOriginId(), webapp.getWar(), directory);
         if (path == null) {
             undeploy(app);
-            throw new IllegalArgumentException(String.format("War file not found: ", webapp)); 
+            throw new IllegalArgumentException(String.format("War file not found: %s", webapp)); 
         }
         webapp.setWar(path);
         return createContext(webapp);
